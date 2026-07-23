@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#155e75" />
+    <title>工资条管理 Excel 版</title>
+    <link rel="icon" href="./icon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">老板工资助手</p>
+          <h1>工资条管理 Excel 版</h1>
+        </div>
+        <div class="status-pill" id="syncStatus">未导入</div>
+      </header>
+
+      <section class="workspace">
+        <section class="panel active">
+          <div class="panel-title">
+            <div>
+              <h2>Excel 工人资料</h2>
+              <p>下载固定模板，维护工人资料后上传。上传成功后会保存到本机浏览器，下次打开不用重复上传。</p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <a class="button-like primary-link" href="./templates/工人资料模板.xlsx" download>下载 Excel 模板</a>
+            <label class="button-like">
+              上传 Excel
+              <input id="excelInput" type="file" accept=".xlsx,.xls" hidden />
+            </label>
+            <button id="clearExcelBtn" class="danger" type="button">清除本机 Excel 数据</button>
+            <a class="button-like" href="./index.html">打开数据库版</a>
+          </div>
+
+          <p class="meta" id="dataStatus">还没有导入 Excel。请先下载模板，按固定字段填写后上传。</p>
+          <div class="worker-list" id="workerList"></div>
+        </section>
+
+        <section class="panel active">
+          <div class="panel-title">
+            <div>
+              <h2>生成工资条</h2>
+              <p>粘贴老板平时记的请假内容，系统会用已保存的 Excel 工人资料匹配并生成工资条。</p>
+            </div>
+          </div>
+
+          <div class="month-row">
+            <label>
+              年份兜底
+              <input id="yearInput" inputmode="numeric" type="number" min="2020" max="2100" />
+            </label>
+          </div>
+
+          <label class="field-block">
+            请假记录
+            <textarea id="attendanceInput" rows="8" placeholder="例如：&#10;6月&#10;赵师 9，/14，20/，22/，23/，27，预支1800元。&#10;范师 15，30，"></textarea>
+          </label>
+
+          <div class="actions sticky-actions">
+            <button class="primary" id="generateBtn" type="button">生成工资条</button>
+          </div>
+
+          <div class="summary-grid" id="summaryGrid"></div>
+          <section class="slip-list" id="slipList" aria-label="单人工资条"></section>
+        </section>
+      </section>
+    </main>
+
+    <div class="toast" id="toast"></div>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="./excel-app.js?v=20260723a"></script>
+  </body>
+</html>
