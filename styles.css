@@ -377,6 +377,42 @@ textarea:focus {
   transform: translateY(-1px);
 }
 
+.import-message {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+  padding: 12px;
+}
+
+.import-message strong {
+  color: var(--ink);
+}
+
+.import-message p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.import-message.success {
+  border-color: #b7d8cf;
+  background: #f2fbf7;
+}
+
+.import-message.warn {
+  border-color: #f3c97d;
+  background: #fff8eb;
+}
+
+.import-message.error {
+  border-color: #f0b4ad;
+  background: #fff5f3;
+}
+
 .check-row {
   display: flex;
   align-items: center;
@@ -694,10 +730,10 @@ textarea:focus {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: max(18px, env(safe-area-inset-bottom));
+  top: 50%;
   z-index: 30;
   max-width: calc(100% - 24px);
-  transform: translateX(-50%) translateY(18px);
+  transform: translate(-50%, -50%) scale(0.96);
   border-radius: 8px;
   background: #13201d;
   color: #fff;
@@ -709,7 +745,7 @@ textarea:focus {
 
 .toast.show {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translate(-50%, -50%) scale(1);
 }
 
 code {
