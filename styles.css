@@ -310,6 +310,10 @@ textarea:focus {
   color: var(--brand-dark);
 }
 
+.excel-tabs {
+  grid-template-columns: repeat(3, 1fr);
+}
+
 .panel {
   display: none;
 }
@@ -451,6 +455,111 @@ textarea:focus {
   background: #f6fbfa;
 }
 
+.worker-stats {
+  display: grid;
+  gap: 10px;
+}
+
+.stats-meta {
+  border: 1px solid #cdded9;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f6fbfa, #fff8eb);
+  color: var(--brand-dark);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.worker-stat-table {
+  display: grid;
+  gap: 8px;
+}
+
+.worker-stat-head,
+.worker-stat-row {
+  display: grid;
+  grid-template-columns: 72px 78px 88px 100px 62px 62px minmax(120px, 1.2fr) minmax(160px, 1.6fr);
+  gap: 6px;
+  align-items: stretch;
+}
+
+.worker-stat-head {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  padding: 0 2px;
+}
+
+.worker-stat-row {
+  border: 1px solid #d5e4df;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 8px;
+  box-shadow: 0 8px 18px rgba(20, 43, 38, 0.06);
+}
+
+.stat-cell {
+  min-width: 0;
+  border-radius: 7px;
+  background: #f7faf9;
+  padding: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.stat-name {
+  background: #ecf7f5;
+  color: var(--brand-dark);
+  font-weight: 900;
+}
+
+.stat-age {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  background: #fff1f0;
+  color: #c2410c;
+  font-weight: 900;
+}
+
+.stat-age strong {
+  font-size: 20px;
+}
+
+.stat-idle,
+.stat-formula {
+  color: var(--muted);
+}
+
+.mini-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.mini-pill.ok {
+  background: #dff5eb;
+  color: #166534;
+}
+
+.mini-pill.accent {
+  background: #e7f4f2;
+  color: var(--brand-dark);
+}
+
+.mini-pill.gray {
+  background: #edf0ef;
+  color: var(--muted);
+}
+
 .slip-list,
 .worker-list,
 .history-list {
@@ -571,5 +680,48 @@ code {
   .slip-actions button,
   .history-actions button {
     flex: 1;
+  }
+
+  .worker-stat-head {
+    display: none;
+  }
+
+  .worker-stat-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .stat-cell {
+    display: grid;
+    gap: 3px;
+    min-height: 58px;
+  }
+
+  .stat-cell::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .stat-name,
+  .stat-age,
+  .stat-idle,
+  .stat-formula {
+    grid-column: 1 / -1;
+  }
+
+  .stat-name {
+    min-height: 48px;
+    font-size: 18px;
+  }
+
+  .stat-age {
+    min-height: 54px;
+  }
+
+  .stat-age strong {
+    font-size: 26px;
   }
 }
