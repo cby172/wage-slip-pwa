@@ -53,7 +53,7 @@
             <button id="reloadTopBtn" type="button">刷新</button>
           </div>
 
-          <div class="month-row">
+          <div class="month-row" hidden>
             <label>
               年份兜底
               <input id="yearInput" inputmode="numeric" type="number" min="2020" max="2100" />
@@ -67,6 +67,7 @@
 
           <div class="actions sticky-actions">
             <button class="primary" id="generateBtn" type="button">生成工资条</button>
+            <button id="sampleAttendanceBtn" type="button">示例数据</button>
           </div>
 
           <div class="summary-grid" id="summaryGrid"></div>
@@ -216,7 +217,7 @@
       </section>
 
       <section class="version-shell" id="excelShell" hidden>
-        <iframe class="embedded-app" id="excelFrame" title="Excel 版工资条管理" src="./excel.html?embedded=1&v=20260723g" scrolling="no"></iframe>
+        <iframe class="embedded-app" id="excelFrame" title="Excel 版工资条管理" src="./excel.html?embedded=1&v=20260723h" scrolling="no"></iframe>
       </section>
     </main>
 
@@ -224,7 +225,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./config.js?v=20260723e"></script>
-    <script src="./app.js?v=20260723h"></script>
+    <script src="./app.js?v=20260723i"></script>
     <script>
       (() => {
         const dbButton = document.getElementById("dbModeBtn");
