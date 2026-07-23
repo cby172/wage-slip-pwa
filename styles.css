@@ -458,6 +458,11 @@ textarea:focus {
 .worker-stats {
   display: grid;
   gap: 10px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-color: #8db9b3 #edf4f2;
 }
 
 .stats-meta {
@@ -473,12 +478,13 @@ textarea:focus {
 .worker-stat-table {
   display: grid;
   gap: 8px;
+  min-width: 980px;
 }
 
 .worker-stat-head,
 .worker-stat-row {
   display: grid;
-  grid-template-columns: 72px 78px 88px 100px 62px 62px minmax(120px, 1.2fr) minmax(160px, 1.6fr);
+  grid-template-columns: 72px 86px 88px 72px 88px 62px 62px minmax(150px, 1.1fr) minmax(200px, 1.4fr);
   gap: 6px;
   align-items: stretch;
 }
@@ -682,46 +688,7 @@ code {
     flex: 1;
   }
 
-  .worker-stat-head {
-    display: none;
-  }
-
-  .worker-stat-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    padding: 10px;
-  }
-
-  .stat-cell {
-    display: grid;
-    gap: 3px;
-    min-height: 58px;
-  }
-
-  .stat-cell::before {
-    content: attr(data-label);
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 900;
-  }
-
-  .stat-name,
-  .stat-age,
-  .stat-idle,
-  .stat-formula {
-    grid-column: 1 / -1;
-  }
-
-  .stat-name {
-    min-height: 48px;
-    font-size: 18px;
-  }
-
-  .stat-age {
-    min-height: 54px;
-  }
-
   .stat-age strong {
-    font-size: 26px;
+    font-size: 22px;
   }
 }
