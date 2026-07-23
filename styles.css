@@ -54,6 +54,27 @@ button:disabled {
   color: #fff;
 }
 
+.button-like {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary-link {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
 .danger {
   color: var(--danger);
 }
