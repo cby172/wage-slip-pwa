@@ -888,7 +888,7 @@ function renderPayrollSummary(result) {
     <section class="result-summary-card">
       <div class="result-summary-head">
         <h3>工资汇总</h3>
-        <button type="button" data-copy-summary>复制汇总</button>
+        <button type="button" data-copy-summary>复制</button>
       </div>
       <pre class="result-summary-text">${escapeHtml(text)}</pre>
     </section>
