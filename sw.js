@@ -1,4 +1,4 @@
-const CACHE_NAME = "wage-slip-pwa-v20";
+const CACHE_NAME = "wage-slip-pwa-v21";
 const ASSETS = [
   "./",
   "./index.html",
