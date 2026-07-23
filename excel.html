@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#155e75" />
     <title>工资条管理 Excel 版</title>
+    <script>
+      if (new URLSearchParams(location.search).has("embedded")) {
+        document.documentElement.classList.add("embedded");
+      }
+    </script>
     <link rel="icon" href="./icon.svg" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -76,6 +81,6 @@
 
     <div class="toast" id="toast"></div>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="./excel-app.js?v=20260723a"></script>
+    <script src="./excel-app.js?v=20260723b"></script>
   </body>
 </html>
