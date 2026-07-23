@@ -7,7 +7,7 @@
     <title>工资条管理</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260723n" />
   </head>
   <body>
     <main class="app">
@@ -79,10 +79,17 @@
           <div class="panel-title">
             <div>
               <h2>工人管理</h2>
-              <p>新增、修改、停用工人。工资会按规则自动算，也可以临时手动覆盖底薪。</p>
+              <p>先看现有工人；要改谁就点谁下面的修改。新增工人在最下面添加。</p>
             </div>
           </div>
 
+          <section class="worker-section">
+            <h3>现有工人</h3>
+            <div class="worker-list" id="workerList"></div>
+          </section>
+
+          <section class="worker-section add-worker-section">
+            <h3>添加新工人</h3>
           <form class="worker-form" id="workerForm">
             <input id="workerId" type="hidden" />
             <label>
@@ -118,7 +125,9 @@
             </label>
             <label class="wide">
               中断记录
-              <textarea id="interruptionsInput" rows="3" placeholder="一行一段：2025-04-01 到 2026-03-31 备注"></textarea>
+              <span class="meta">开始日期必填；结束日期可以空着，表示这个工人目前还在停工/中断中。</span>
+              <div class="interruptions-editor" id="interruptionsEditor"></div>
+              <button class="secondary-small" id="addInterruptionBtn" type="button">添加中断记录</button>
             </label>
             <label class="wide">
               备注
@@ -129,8 +138,7 @@
               <button id="resetWorkerBtn" type="button">清空</button>
             </div>
           </form>
-
-          <div class="worker-list" id="workerList"></div>
+          </section>
           </section>
 
           <section class="panel" id="panel-rules">
@@ -226,7 +234,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./config.js?v=20260723e"></script>
-    <script src="./app.js?v=20260723m"></script>
+    <script src="./app.js?v=20260723n"></script>
     <script>
       (() => {
         const dbButton = document.getElementById("dbModeBtn");
