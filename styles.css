@@ -93,6 +93,14 @@ button:disabled {
   margin-bottom: 12px;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .eyebrow {
   margin: 0 0 4px;
   color: var(--brand);
