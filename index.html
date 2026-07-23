@@ -17,24 +17,29 @@
           <h1>工资条管理</h1>
         </div>
         <div class="topbar-actions">
-          <a class="button-like" href="./excel.html">切换 Excel 版</a>
           <div class="status-pill" id="syncStatus">未连接</div>
         </div>
       </header>
 
-      <section class="setup-alert" id="configAlert" hidden>
-        <b>还没有配置 Supabase</b>
-        <span>先在 <code>config.js</code> 里填写 Project URL 和 anon public key。</span>
-      </section>
+      <nav class="version-switcher" aria-label="版本切换">
+        <button class="active" id="dbModeBtn" type="button">数据库版</button>
+        <button id="excelModeBtn" type="button">Excel 版</button>
+      </nav>
 
-      <section class="workspace" id="appView" hidden>
-        <nav class="tabs" aria-label="主要功能">
-          <button class="tab active" data-panel="panel-payroll" type="button">算工资</button>
-          <button class="tab" data-panel="panel-workers" type="button">工人</button>
-          <button class="tab" data-panel="panel-rules" type="button">规则</button>
-        </nav>
+      <section class="version-shell active" id="dbShell">
+        <section class="setup-alert" id="configAlert" hidden>
+          <b>还没有配置 Supabase</b>
+          <span>先在 <code>config.js</code> 里填写 Project URL 和 anon public key。</span>
+        </section>
 
-        <section class="panel active" id="panel-payroll">
+        <section class="workspace" id="appView" hidden>
+          <nav class="tabs" aria-label="主要功能">
+            <button class="tab active" data-panel="panel-payroll" type="button">算工资</button>
+            <button class="tab" data-panel="panel-workers" type="button">工人</button>
+            <button class="tab" data-panel="panel-rules" type="button">规则</button>
+          </nav>
+
+          <section class="panel active" id="panel-payroll">
           <div class="panel-title">
             <div>
               <h2>生成工资条</h2>
@@ -61,9 +66,9 @@
 
           <div class="summary-grid" id="summaryGrid"></div>
           <section class="slip-list" id="slipList" aria-label="单人工资条"></section>
-        </section>
+          </section>
 
-        <section class="panel" id="panel-workers">
+          <section class="panel" id="panel-workers">
           <div class="panel-title">
             <div>
               <h2>工人管理</h2>
@@ -119,9 +124,9 @@
           </form>
 
           <div class="worker-list" id="workerList"></div>
-        </section>
+          </section>
 
-        <section class="panel" id="panel-rules">
+          <section class="panel" id="panel-rules">
           <div class="panel-title">
             <div>
               <h2>工资规则</h2>
@@ -177,9 +182,9 @@
             <h3>当前关键规则</h3>
             <p>春节前休 3 天；腊月 30 天时腊月 28 放假，腊月 29 天时腊月 27 放假。春节前 30 天为双薪，请假扣双倍。普通月份 3 天以内只免 1 天，4 天及以上请多少扣多少。</p>
           </section>
-        </section>
+          </section>
 
-        <section class="panel" id="panel-history">
+          <section class="panel" id="panel-history">
           <div class="panel-title">
             <div>
               <h2>历史与备份</h2>
@@ -191,7 +196,12 @@
             <button id="exportBtn" type="button">导出备份</button>
           </div>
           <div class="history-list" id="historyList"></div>
+          </section>
         </section>
+      </section>
+
+      <section class="version-shell" id="excelShell" hidden>
+        <iframe class="embedded-app" id="excelFrame" title="Excel 版工资条管理" src="./excel.html?embedded=1"></iframe>
       </section>
     </main>
 
@@ -200,5 +210,32 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./config.js?v=20260723e"></script>
     <script src="./app.js?v=20260723e"></script>
+    <script>
+      (() => {
+        const dbButton = document.getElementById("dbModeBtn");
+        const excelButton = document.getElementById("excelModeBtn");
+        const dbShell = document.getElementById("dbShell");
+        const excelShell = document.getElementById("excelShell");
+        let hideTimer = null;
+        function show(mode) {
+          const excel = mode === "excel";
+          clearTimeout(hideTimer);
+          dbButton.classList.toggle("active", !excel);
+          excelButton.classList.toggle("active", excel);
+          if (excel) excelShell.hidden = false;
+          else dbShell.hidden = false;
+          requestAnimationFrame(() => {
+            dbShell.classList.toggle("active", !excel);
+            excelShell.classList.toggle("active", excel);
+          });
+          hideTimer = setTimeout(() => {
+            dbShell.hidden = excel;
+            excelShell.hidden = !excel;
+          }, 190);
+        }
+        dbButton.addEventListener("click", () => show("db"));
+        excelButton.addEventListener("click", () => show("excel"));
+      })();
+    </script>
   </body>
 </html>
