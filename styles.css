@@ -418,6 +418,39 @@ textarea:focus {
   font-size: 19px;
 }
 
+.data-health {
+  margin-top: 12px;
+}
+
+.data-health-card h3,
+.data-health-card h4 {
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+
+.data-health-card h4 {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.data-health-card ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.data-health-card.warn {
+  border-color: #f3c97d;
+  background: #fff8eb;
+}
+
+.data-health-card.ok {
+  border-color: #b7d8cf;
+  background: #f6fbfa;
+}
+
 .slip-list,
 .worker-list,
 .history-list {
