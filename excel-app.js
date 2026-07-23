@@ -895,23 +895,10 @@ function renderPayrollResult(result) {
 function renderPayrollSummary(result) {
   const target = $("resultSummary");
   if (!target) return;
+  const text = result.rows.map((row) => row.slipText).join("\n\n");
   target.innerHTML = `<section class="result-summary-card">
     <h3>工资汇总</h3>
-    <div class="result-summary-list">
-      ${result.rows
-        .map(
-          (row) => `<article class="result-summary-item">
-            <strong>@${escapeHtml(row.worker.name)}</strong>
-            <div class="result-summary-meta">
-              <span>应发 ${money(row.gross)} 元</span>
-              <span>实发 ${money(row.net)} 元</span>
-              <span>预支 ${money(row.record.advance)} 元</span>
-              <span>${escapeHtml(row.leaveStats.totalLeave ? `请假 ${row.leaveStats.totalLeave} 天` : "无请假")}</span>
-            </div>
-          </article>`
-        )
-        .join("")}
-    </div>
+    <pre class="result-summary-text">${escapeHtml(text)}</pre>
   </section>`;
 }
 
