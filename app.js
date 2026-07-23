@@ -95,6 +95,7 @@ let workers = [];
 let attendanceMonths = [];
 let latestResult = null;
 let realtimeChannel = null;
+let editingWorkerId = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -145,8 +146,11 @@ function bindEvents() {
   $("slipList").addEventListener("click", copySingleSlip);
   $("resultSummary").addEventListener("click", copyPayrollSummary);
   $("workerForm").addEventListener("submit", saveWorker);
+  $("workerForm").addEventListener("click", handleWorkerFormClick);
+  $("addInterruptionBtn").addEventListener("click", () => addInterruptionRow($("interruptionsEditor")));
   $("resetWorkerBtn").addEventListener("click", resetWorkerForm);
   $("workerList").addEventListener("click", handleWorkerAction);
+  $("workerList").addEventListener("submit", saveInlineWorker);
   $("saveRulesBtn").addEventListener("click", saveRules);
   $("seedBtn").addEventListener("click", seedWorkers);
   $("reloadBtn").addEventListener("click", loadAll);
@@ -185,6 +189,7 @@ async function loadAll() {
   await ensureDefaultWorkers();
   subscribeRealtime();
   renderRules();
+  resetWorkerForm();
   renderWorkers();
   renderHistory();
   resetPayrollResult();
@@ -334,23 +339,150 @@ function renderWorkers() {
     const salary = calculateWorkerSalary(worker, getSelectedPeriod().end);
     const card = document.createElement("article");
     card.className = "worker-card";
+    const interruptions = normalizeInterruptions(worker.interruptions || []);
+    const interruptionText = interruptions.length
+      ? interruptions.map((item) => `${item.start || "未填开始"} 至 ${item.end || "未结束"}${item.note ? `（${item.note}）` : ""}`).join("；")
+      : "无中断记录";
     card.innerHTML = `
       <div class="worker-head">
         <div>
           <strong>${escapeHtml(worker.name)}</strong>
           <p class="meta">${worker.active ? "在职" : "停用"} · 底薪 ${money(salary.baseSalary)} · 津贴 ${money(salary.allowance)} · ${worker.raise_strategy === "spring_holiday" ? "过年放假日加薪" : "入职日满年加薪"}</p>
+          <p class="meta">中断：${escapeHtml(interruptionText)}</p>
         </div>
         <div class="worker-actions">
-          <button type="button" data-edit="${worker.id}">编辑</button>
+          <button type="button" data-edit="${worker.id}">${editingWorkerId === worker.id ? "收起" : "修改"}</button>
           <button type="button" data-toggle="${worker.id}">${worker.active ? "停用" : "启用"}</button>
           <button class="danger" type="button" data-delete="${worker.id}">删除</button>
         </div>
       </div>
       <p class="meta">${escapeHtml(worker.work_note || "无备注")}</p>
+      ${editingWorkerId === worker.id ? renderInlineWorkerForm(worker) : ""}
     `;
     list.appendChild(card);
   });
   renderWorkerStats();
+}
+
+function renderInlineWorkerForm(worker) {
+  return `
+    <form class="worker-form inline-worker-form" data-inline-worker-form="${worker.id}">
+      <input name="workerId" type="hidden" value="${escapeHtml(worker.id)}" />
+      <label>
+        姓名
+        <input name="name" required type="text" value="${escapeHtml(worker.name)}" />
+      </label>
+      <label>
+        入职日期
+        <input name="hire_date" required type="date" value="${escapeHtml(worker.hire_date || "")}" />
+      </label>
+      <label>
+        起始底薪
+        <input name="base_start_salary" inputmode="numeric" min="0" step="1" type="number" value="${escapeHtml(worker.base_start_salary || rules.defaultBaseSalary)}" />
+      </label>
+      <label>
+        手动底薪
+        <input name="base_salary_override" inputmode="numeric" min="0" step="1" type="number" placeholder="不填则自动算" value="${escapeHtml(worker.base_salary_override ?? "")}" />
+      </label>
+      <label>
+        加薪策略
+        <select name="raise_strategy">
+          <option value="anniversary" ${worker.raise_strategy === "anniversary" ? "selected" : ""}>入职日满年加薪</option>
+          <option value="spring_holiday" ${worker.raise_strategy === "spring_holiday" ? "selected" : ""}>过年放假日加薪</option>
+        </select>
+      </label>
+      <label class="check-row">
+        <input name="is_warehouse_manager" type="checkbox" ${worker.is_warehouse_manager ? "checked" : ""} />
+        仓库管理员，加 400 津贴
+      </label>
+      <label class="check-row">
+        <input name="active" type="checkbox" ${worker.active ? "checked" : ""} />
+        在职，参与算工资
+      </label>
+      <label class="wide">
+        中断记录
+        <span class="meta">结束日期可空，表示还没恢复上班。</span>
+        <div class="interruptions-editor">${renderInterruptionRows(worker.interruptions || [])}</div>
+        <button class="secondary-small" type="button" data-add-interruption>添加中断记录</button>
+      </label>
+      <label class="wide">
+        备注
+        <textarea name="work_note" rows="3" placeholder="历史工作段、特殊说明等">${escapeHtml(worker.work_note || "")}</textarea>
+      </label>
+      <div class="actions wide">
+        <button class="primary" type="submit">保存修改</button>
+        <button type="button" data-cancel-edit>取消</button>
+      </div>
+    </form>
+  `;
+}
+
+function renderInterruptionRows(items = []) {
+  const normalized = normalizeInterruptions(items);
+  return normalized.length
+    ? normalized.map((item) => interruptionRowHtml(item)).join("")
+    : '<p class="meta interruption-empty">暂无中断记录，需要时点“添加中断记录”。</p>';
+}
+
+function interruptionRowHtml(item = {}) {
+  return `
+    <div class="interruption-row">
+      <label>
+        开始
+        <input class="interruption-start" type="date" value="${escapeHtml(item.start || "")}" />
+      </label>
+      <label>
+        结束
+        <input class="interruption-end" type="date" value="${escapeHtml(item.end || "")}" />
+      </label>
+      <label>
+        备注
+        <input class="interruption-note" type="text" value="${escapeHtml(item.note || "")}" placeholder="可不填" />
+      </label>
+      <button class="danger" type="button" data-remove-interruption>删除</button>
+    </div>
+  `;
+}
+
+function addInterruptionRow(editor, item = {}) {
+  if (!editor) return;
+  const empty = editor.querySelector(".interruption-empty");
+  if (empty) empty.remove();
+  editor.insertAdjacentHTML("beforeend", interruptionRowHtml(item));
+}
+
+function removeInterruptionRow(button) {
+  button.closest(".interruption-row")?.remove();
+}
+
+function collectInterruptionRows(editor) {
+  if (!editor) return [];
+  return [...editor.querySelectorAll(".interruption-row")]
+    .map((row) => ({
+      start: row.querySelector(".interruption-start")?.value || "",
+      end: row.querySelector(".interruption-end")?.value || "",
+      note: row.querySelector(".interruption-note")?.value.trim() || ""
+    }))
+    .filter((item) => item.start || item.end || item.note);
+}
+
+function normalizeInterruptions(items = []) {
+  if (!Array.isArray(items)) return parseInterruptions(String(items || ""));
+  return items
+    .map((item) => ({
+      start: String(item?.start || "").trim(),
+      end: String(item?.end || "").trim(),
+      note: String(item?.note || "").trim()
+    }))
+    .filter((item) => item.start || item.end || item.note);
+}
+
+function validateInterruptions(items) {
+  for (const [index, item] of items.entries()) {
+    if (!item.start) return `第 ${index + 1} 条中断记录缺少开始日期`;
+    if (item.end && parseDate(item.end) < parseDate(item.start)) return `第 ${index + 1} 条中断记录结束日期不能早于开始日期`;
+  }
+  return "";
 }
 
 function renderWorkerStats() {
@@ -397,10 +529,10 @@ function effectiveWorkDays(worker, asOf) {
   const hire = parseDate(worker.hire_date);
   if (!hire || asOf < hire) return 0;
   let days = Math.max(0, daysBetweenInclusive(hire, asOf));
-  (worker.interruptions || []).forEach((item) => {
+  normalizeInterruptions(worker.interruptions || []).forEach((item) => {
     const start = parseDate(item.start);
-    const end = parseDate(item.end);
-    if (!start || !end) return;
+    const end = parseDate(item.end) || asOf;
+    if (!start) return;
     const overlapStart = start > hire ? start : hire;
     const overlapEnd = end < asOf ? end : asOf;
     if (overlapEnd >= overlapStart) days -= daysBetweenInclusive(overlapStart, overlapEnd);
@@ -411,15 +543,15 @@ function effectiveWorkDays(worker, asOf) {
 function formatIdleTime(worker, asOf) {
   const parts = [];
   let totalDays = 0;
-  (worker.interruptions || []).forEach((item) => {
+  normalizeInterruptions(worker.interruptions || []).forEach((item) => {
     const start = parseDate(item.start);
-    const end = parseDate(item.end);
-    if (!start || !end) return;
+    const end = parseDate(item.end) || asOf;
+    if (!start) return;
     const cappedEnd = end < asOf ? end : asOf;
     if (cappedEnd < start) return;
     const days = daysBetweenInclusive(start, cappedEnd);
     totalDays += days;
-    parts.push(`${item.start}至${item.end}${item.note ? `（${item.note}）` : ""}`);
+    parts.push(`${item.start}至${item.end || "未结束"}${item.note ? `（${item.note}）` : ""}`);
   });
   if (!parts.length) return "无";
   return `合计 ${formatYears(totalDays / 365.2425)} 年；${parts.join("；")}`;
@@ -445,6 +577,9 @@ function formatYears(value) {
 async function saveWorker(event) {
   event.preventDefault();
   const id = $("workerId").value;
+  const interruptions = collectInterruptionRows($("interruptionsEditor"));
+  const interruptionError = validateInterruptions(interruptions);
+  if (interruptionError) return toast(interruptionError);
   const payload = {
     owner_id: SINGLE_OWNER_ID,
     name: $("workerName").value.trim(),
@@ -455,7 +590,7 @@ async function saveWorker(event) {
     is_warehouse_manager: $("warehouseManager").checked,
     active: $("workerActive").checked,
     work_note: $("workNote").value.trim(),
-    interruptions: parseInterruptions($("interruptionsInput").value)
+    interruptions
   };
   if (!payload.name || !payload.hire_date) return toast("请填写姓名和入职日期");
   const request = id
@@ -466,33 +601,70 @@ async function saveWorker(event) {
   resetWorkerForm();
   await loadWorkers();
   renderWorkers();
-  toast("工人已保存");
+  toast(id ? "已修改完成" : "已添加完成");
 }
 
 function handleWorkerAction(event) {
-  const editId = event.target.dataset.edit;
-  const toggleId = event.target.dataset.toggle;
-  const deleteId = event.target.dataset.delete;
-  if (editId) return fillWorkerForm(editId);
+  const button = event.target.closest("button");
+  if (!button) return;
+  if (button.dataset.addInterruption !== undefined) return addInterruptionRow(button.closest("form")?.querySelector(".interruptions-editor"));
+  if (button.dataset.removeInterruption !== undefined) return removeInterruptionRow(button);
+  if (button.dataset.cancelEdit !== undefined) {
+    editingWorkerId = null;
+    renderWorkers();
+    return;
+  }
+  const editId = button.dataset.edit;
+  const toggleId = button.dataset.toggle;
+  const deleteId = button.dataset.delete;
+  if (editId) return toggleInlineWorkerForm(editId);
   if (toggleId) return toggleWorker(toggleId);
   if (deleteId) return deleteWorker(deleteId);
 }
 
-function fillWorkerForm(id) {
-  const worker = workers.find((item) => item.id === id);
-  if (!worker) return;
-  $("workerId").value = worker.id;
-  $("workerName").value = worker.name;
-  $("hireDate").value = worker.hire_date;
-  $("baseStartSalary").value = worker.base_start_salary;
-  $("baseSalaryOverride").value = worker.base_salary_override ?? "";
-  $("raiseStrategy").value = worker.raise_strategy;
-  $("warehouseManager").checked = worker.is_warehouse_manager;
-  $("workerActive").checked = worker.active;
-  $("workNote").value = worker.work_note || "";
-  $("interruptionsInput").value = formatInterruptions(worker.interruptions || []);
-  document.querySelector('[data-panel="panel-workers"]').click();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+function handleWorkerFormClick(event) {
+  const button = event.target.closest("button");
+  if (!button || button.id === "addInterruptionBtn") return;
+  if (button.dataset.removeInterruption !== undefined) removeInterruptionRow(button);
+}
+
+function toggleInlineWorkerForm(id) {
+  editingWorkerId = editingWorkerId === id ? null : id;
+  renderWorkers();
+  setTimeout(() => {
+    [...document.querySelectorAll("[data-inline-worker-form]")]
+      .find((form) => form.dataset.inlineWorkerForm === id)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 50);
+}
+
+async function saveInlineWorker(event) {
+  event.preventDefault();
+  const form = event.target.closest("[data-inline-worker-form]");
+  if (!form) return;
+  const id = form.dataset.inlineWorkerForm;
+  const interruptions = collectInterruptionRows(form.querySelector(".interruptions-editor"));
+  const interruptionError = validateInterruptions(interruptions);
+  if (interruptionError) return toast(interruptionError);
+  const payload = {
+    owner_id: SINGLE_OWNER_ID,
+    name: form.elements.name.value.trim(),
+    hire_date: form.elements.hire_date.value,
+    base_start_salary: Number(form.elements.base_start_salary.value) || rules.defaultBaseSalary,
+    base_salary_override: form.elements.base_salary_override.value ? Number(form.elements.base_salary_override.value) : null,
+    raise_strategy: form.elements.raise_strategy.value,
+    is_warehouse_manager: form.elements.is_warehouse_manager.checked,
+    active: form.elements.active.checked,
+    work_note: form.elements.work_note.value.trim(),
+    interruptions
+  };
+  if (!payload.name || !payload.hire_date) return toast("请填写姓名和入职日期");
+  const { error } = await supabaseClient.from("workers").update(payload).eq("id", id);
+  if (error) return handleSupabaseError(error);
+  editingWorkerId = null;
+  await loadWorkers();
+  renderWorkers();
+  toast("已修改完成");
 }
 
 function resetWorkerForm() {
@@ -501,6 +673,7 @@ function resetWorkerForm() {
   $("baseStartSalary").value = rules.defaultBaseSalary;
   $("raiseStrategy").value = "anniversary";
   $("workerActive").checked = true;
+  $("interruptionsEditor").innerHTML = renderInterruptionRows([]);
 }
 
 async function toggleWorker(id) {
@@ -510,6 +683,7 @@ async function toggleWorker(id) {
   if (error) return handleSupabaseError(error);
   await loadWorkers();
   renderWorkers();
+  toast(worker.active ? "已停用" : "已启用");
 }
 
 async function deleteWorker(id) {
@@ -519,6 +693,7 @@ async function deleteWorker(id) {
   if (error) return handleSupabaseError(error);
   await loadWorkers();
   renderWorkers();
+  toast("已删除");
 }
 
 async function seedWorkers() {
@@ -742,10 +917,10 @@ function effectiveFullYears(worker, asOf) {
   const hire = parseDate(worker.hire_date);
   if (!hire || asOf < hire) return 0;
   let days = Math.max(0, daysBetweenInclusive(hire, asOf));
-  (worker.interruptions || []).forEach((item) => {
+  normalizeInterruptions(worker.interruptions || []).forEach((item) => {
     const start = parseDate(item.start);
-    const end = parseDate(item.end);
-    if (!start || !end) return;
+    const end = parseDate(item.end) || asOf;
+    if (!start) return;
     const overlapStart = start > hire ? start : hire;
     const overlapEnd = end < asOf ? end : asOf;
     if (overlapEnd >= overlapStart) days -= daysBetweenInclusive(overlapStart, overlapEnd);
