@@ -20,6 +20,81 @@ const sampleAttendance = `6月
 张师 28，
 刘师 13，`;
 
+const DEFAULT_EXCEL_FILE_NAME = "工人资料_2026-07-23版.xlsx";
+
+const defaultWorkers = [
+  {
+    id: "excel-赵师",
+    owner_id: "excel-local",
+    name: "赵师",
+    hire_date: "2023-02-20",
+    base_start_salary: 3600,
+    base_salary_override: 4200,
+    raise_strategy: "spring_holiday",
+    is_warehouse_manager: true,
+    active: true,
+    slip_note: "2.20满年&过年加薪",
+    work_note: "当前仓库管理员",
+    interruptions: []
+  },
+  {
+    id: "excel-范师",
+    owner_id: "excel-local",
+    name: "范师",
+    hire_date: "2019-04-30",
+    base_start_salary: 3600,
+    base_salary_override: 4200,
+    raise_strategy: "spring_holiday",
+    is_warehouse_manager: false,
+    active: true,
+    slip_note: "2.13满年&过年加薪",
+    work_note: "第一段工作 2019-04 到 2022-07，2025-02-13 重新入职",
+    interruptions: [{ start: "2022-08-01", end: "2025-02-12", note: "中断约 3 年" }]
+  },
+  {
+    id: "excel-王师",
+    owner_id: "excel-local",
+    name: "王师",
+    hire_date: "2023-11-29",
+    base_start_salary: 3600,
+    base_salary_override: 4000,
+    raise_strategy: "spring_holiday",
+    is_warehouse_manager: false,
+    active: true,
+    slip_note: "4.1满年&过年加薪",
+    work_note: "第一段工作 2023-11-29 到 2025-03-31，2026-04-01 重新入职",
+    interruptions: [{ start: "2025-04-01", end: "2026-03-31", note: "中断约 1 年" }]
+  },
+  {
+    id: "excel-张师",
+    owner_id: "excel-local",
+    name: "张师",
+    hire_date: "2024-09-08",
+    base_start_salary: 3600,
+    base_salary_override: 4000,
+    raise_strategy: "spring_holiday",
+    is_warehouse_manager: false,
+    active: true,
+    slip_note: "9.8满年&过年加薪",
+    work_note: "",
+    interruptions: []
+  },
+  {
+    id: "excel-刘师",
+    owner_id: "excel-local",
+    name: "刘师",
+    hire_date: "2025-07-11",
+    base_start_salary: 3600,
+    base_salary_override: 3800,
+    raise_strategy: "spring_holiday",
+    is_warehouse_manager: false,
+    active: true,
+    slip_note: "7.11满年&过年加薪",
+    work_note: "",
+    interruptions: []
+  }
+];
+
 let rules = { ...defaultRules };
 let workers = [];
 let latestResult = null;
@@ -32,6 +107,7 @@ function boot() {
   $("excelInput").addEventListener("change", handleExcelUpload);
   $("generateBtn").addEventListener("click", generatePayroll);
   $("clearExcelBtn").addEventListener("click", clearSavedExcel);
+  $("downloadCurrentBtn").addEventListener("click", downloadCurrentExcel);
   $("slipList").addEventListener("click", copySingleSlip);
   loadSavedExcel();
 }
@@ -155,12 +231,29 @@ function parseSpringOverrides(value) {
   return Object.keys(result).length ? result : { ...defaultRules.springHolidayOverrides };
 }
 
+function formatSpringOverrides(overrides) {
+  return Object.entries(overrides || {})
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([year, value]) => `${year}=${value}`)
+    .join("；");
+}
+
 function loadSavedExcel() {
   const saved = localStorage.getItem(EXCEL_STORAGE_KEY);
   if (!saved) {
-    setStatus("未导入", "warn");
-    $("dataStatus").textContent = "还没有导入 Excel。请先下载模板，按固定字段填写后上传。";
+    loadDefaultExcelData();
+    localStorage.setItem(EXCEL_STORAGE_KEY, JSON.stringify({
+      schemaVersion: EXCEL_APP_VERSION,
+      sourceFile: DEFAULT_EXCEL_FILE_NAME,
+      savedAt: new Date().toISOString(),
+      isBuiltIn: true,
+      rules,
+      workers
+    }));
+    renderDataStatus({ sourceFile: DEFAULT_EXCEL_FILE_NAME, savedAt: new Date().toISOString(), isBuiltIn: true });
+    renderWorkers();
     resetPayrollResult();
+    setStatus("内置数据", "ok");
     return;
   }
   try {
@@ -173,13 +266,23 @@ function loadSavedExcel() {
     setStatus("已加载", "ok");
   } catch {
     localStorage.removeItem(EXCEL_STORAGE_KEY);
-    setStatus("需重传", "warn");
+    loadDefaultExcelData();
+    renderDataStatus({ sourceFile: DEFAULT_EXCEL_FILE_NAME, savedAt: new Date().toISOString(), isBuiltIn: true });
+    renderWorkers();
+    resetPayrollResult();
+    setStatus("内置数据", "ok");
   }
+}
+
+function loadDefaultExcelData() {
+  workers = JSON.parse(JSON.stringify(defaultWorkers));
+  rules = { ...defaultRules, springHolidayOverrides: { ...defaultRules.springHolidayOverrides } };
 }
 
 function renderDataStatus(data) {
   const savedAt = data.savedAt ? new Date(data.savedAt).toLocaleString("zh-CN") : "未知时间";
-  $("dataStatus").textContent = `当前使用：${data.sourceFile || "本地 Excel 数据"}；工人 ${workers.length} 人；保存时间：${savedAt}`;
+  const source = data.isBuiltIn ? "内置真实数据" : "上传保存数据";
+  $("dataStatus").textContent = `当前使用：${source}；文件：${data.sourceFile || DEFAULT_EXCEL_FILE_NAME}；工人 ${workers.length} 人；保存时间：${savedAt}`;
 }
 
 function renderWorkers() {
@@ -200,14 +303,71 @@ function renderWorkers() {
 }
 
 function clearSavedExcel() {
-  if (!confirm("确定清除本机保存的 Excel 工人数据？")) return;
+  if (!confirm("确定恢复为内置真实工人数据？本机上传保存的数据会被替换。")) return;
   localStorage.removeItem(EXCEL_STORAGE_KEY);
-  workers = [];
-  rules = { ...defaultRules };
-  $("dataStatus").textContent = "已清除本机 Excel 数据，请重新上传。";
-  $("workerList").innerHTML = "";
+  loadDefaultExcelData();
+  const data = {
+    schemaVersion: EXCEL_APP_VERSION,
+    sourceFile: DEFAULT_EXCEL_FILE_NAME,
+    savedAt: new Date().toISOString(),
+    isBuiltIn: true,
+    rules,
+    workers
+  };
+  localStorage.setItem(EXCEL_STORAGE_KEY, JSON.stringify(data));
+  renderDataStatus(data);
+  renderWorkers();
   resetPayrollResult();
-  setStatus("未导入", "warn");
+  setStatus("内置数据", "ok");
+  toast("已恢复内置真实数据");
+}
+
+function downloadCurrentExcel() {
+  if (!workers.length) loadDefaultExcelData();
+  const workbook = XLSX.utils.book_new();
+  const workerRows = [["姓名", "入职日期", "起始底薪", "手动底薪", "加薪策略", "是否仓管", "是否在职", "工资条备注", "备注"]];
+  workers.forEach((worker) => {
+    workerRows.push([
+      worker.name,
+      worker.hire_date,
+      worker.base_start_salary,
+      worker.base_salary_override ?? "",
+      worker.raise_strategy === "spring_holiday" ? "过年放假日加薪" : "入职日满年加薪",
+      worker.is_warehouse_manager ? "是" : "否",
+      worker.active ? "是" : "否",
+      worker.slip_note || "",
+      worker.work_note || ""
+    ]);
+  });
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(workerRows), "工人资料");
+
+  const interruptionRows = [["姓名", "中断开始", "中断结束", "备注"]];
+  workers.forEach((worker) => {
+    (worker.interruptions || []).forEach((item) => {
+      interruptionRows.push([worker.name, item.start || "", item.end || "", item.note || ""]);
+    });
+  });
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(interruptionRows), "中断记录");
+
+  const ruleRows = [["参数", "值", "说明"]];
+  ruleRows.push(["defaultBaseSalary", rules.defaultBaseSalary, "默认起始底薪"]);
+  ruleRows.push(["annualRaise", rules.annualRaise, "每满一年加薪"]);
+  ruleRows.push(["salaryCap", rules.salaryCap, "底薪封顶，不含职位津贴"]);
+  ruleRows.push(["warehouseAllowance", rules.warehouseAllowance, "仓库管理员职位津贴"]);
+  ruleRows.push(["paidLeaveDays", rules.paidLeaveDays, "普通月份有薪假天数"]);
+  ruleRows.push(["springDoubleDays", rules.springDoubleDays, "春节前双薪天数"]);
+  ruleRows.push(["fragmentThreshold", rules.fragmentThreshold, "春节前后零散工资并入阈值"]);
+  ruleRows.push(["春节放假日期覆盖", formatSpringOverrides(rules.springHolidayOverrides), "如 2026=2026-02-14"]);
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(ruleRows), "规则参数");
+
+  const instructionRows = [
+    ["说明", "内容"],
+    ["固定字段", "不要修改工作表名称和第一行字段名，否则网页可能无法识别。"],
+    ["日期格式", "日期建议使用 yyyy-mm-dd，例如 2026-04-01。"],
+    ["上传保存", "上传 Excel 后会保存为当前浏览器本地最新版。"]
+  ];
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(instructionRows), "填写说明");
+  XLSX.writeFile(workbook, `工人资料_${dateKey(new Date())}版.xlsx`);
 }
 
 function generatePayroll(showToast = true) {
