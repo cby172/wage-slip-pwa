@@ -246,6 +246,7 @@ function subscribeRealtime() {
     .on("postgres_changes", { event: "*", schema: "public", table: "app_settings" }, async () => {
       await ensureRules();
       renderRules();
+      renderWorkerStats();
     })
     .on("postgres_changes", { event: "*", schema: "public", table: "attendance_months" }, async () => {
       await loadHistory();
@@ -297,6 +298,7 @@ async function saveRules() {
     .upsert({ owner_id: SINGLE_OWNER_ID, key: SETTINGS_KEY, value: rules }, { onConflict: "owner_id,key" });
   if (error) return handleSupabaseError(error);
   toast("规则已保存");
+  renderWorkerStats();
 }
 
 function renderWorkers() {
@@ -322,6 +324,93 @@ function renderWorkers() {
     `;
     list.appendChild(card);
   });
+  renderWorkerStats();
+}
+
+function renderWorkerStats() {
+  const target = $("dbWorkerStats");
+  if (!target) return;
+  target.innerHTML = buildWorkerStatsHtml(workers);
+}
+
+function buildWorkerStatsHtml(workerList) {
+  if (!workerList.length) return '<p class="meta">还没有工人资料。</p>';
+  const asOf = new Date();
+  const rows = workerList.map((worker) => {
+    const salary = calculateWorkerSalary(worker, asOf);
+    const workYears = effectiveWorkYears(worker, asOf);
+    const idle = formatIdleTime(worker, asOf);
+    return `<article class="worker-stat-row">
+      <div class="stat-cell stat-name" data-label="姓名">${escapeHtml(worker.name)}</div>
+      <div class="stat-cell stat-age" data-label="工龄"><strong>${formatYears(workYears)}</strong><span>年</span></div>
+      <div class="stat-cell" data-label="当前底薪">${money(salary.baseSalary)} 元</div>
+      <div class="stat-cell" data-label="津贴/合计">${money(salary.allowance)} / ${money(salary.baseSalary + salary.allowance)} 元</div>
+      <div class="stat-cell" data-label="状态"><span class="mini-pill ${worker.active ? "ok" : "gray"}">${worker.active ? "在职" : "停用"}</span></div>
+      <div class="stat-cell" data-label="仓管"><span class="mini-pill ${worker.is_warehouse_manager ? "accent" : "gray"}">${worker.is_warehouse_manager ? "是" : "否"}</span></div>
+      <div class="stat-cell stat-idle" data-label="闲置时间">${escapeHtml(idle)}</div>
+      <div class="stat-cell stat-formula" data-label="底薪计算公式">${escapeHtml(formatSalaryFormula(worker, salary, asOf))}</div>
+    </article>`;
+  }).join("");
+  return `<div class="stats-meta">统计日期：${dateKey(asOf)}；工龄已扣除中断/闲置时间，保留 1 位小数。</div>
+    <div class="worker-stat-table" role="table" aria-label="工人统计">
+      <div class="worker-stat-head" role="row">
+        <span>姓名</span><span>工龄</span><span>当前底薪</span><span>津贴/合计</span><span>状态</span><span>仓管</span><span>闲置时间</span><span>底薪计算公式</span>
+      </div>
+      ${rows}
+    </div>`;
+}
+
+function effectiveWorkYears(worker, asOf) {
+  return effectiveWorkDays(worker, asOf) / 365.2425;
+}
+
+function effectiveWorkDays(worker, asOf) {
+  const hire = parseDate(worker.hire_date);
+  if (!hire || asOf < hire) return 0;
+  let days = Math.max(0, daysBetweenInclusive(hire, asOf));
+  (worker.interruptions || []).forEach((item) => {
+    const start = parseDate(item.start);
+    const end = parseDate(item.end);
+    if (!start || !end) return;
+    const overlapStart = start > hire ? start : hire;
+    const overlapEnd = end < asOf ? end : asOf;
+    if (overlapEnd >= overlapStart) days -= daysBetweenInclusive(overlapStart, overlapEnd);
+  });
+  return Math.max(0, days);
+}
+
+function formatIdleTime(worker, asOf) {
+  const parts = [];
+  let totalDays = 0;
+  (worker.interruptions || []).forEach((item) => {
+    const start = parseDate(item.start);
+    const end = parseDate(item.end);
+    if (!start || !end) return;
+    const cappedEnd = end < asOf ? end : asOf;
+    if (cappedEnd < start) return;
+    const days = daysBetweenInclusive(start, cappedEnd);
+    totalDays += days;
+    parts.push(`${item.start}至${item.end}${item.note ? `（${item.note}）` : ""}`);
+  });
+  if (!parts.length) return "无";
+  return `合计 ${formatYears(totalDays / 365.2425)} 年；${parts.join("；")}`;
+}
+
+function formatSalaryFormula(worker, salary, asOf) {
+  const cap = Number(rules.salaryCap);
+  if (worker.base_salary_override !== null && worker.base_salary_override !== undefined && worker.base_salary_override !== "") {
+    return `手动底薪 ${money(worker.base_salary_override)}，封顶 ${money(cap)} 后当前底薪 ${money(salary.baseSalary)}`;
+  }
+  const salaryDate = worker.raise_strategy === "spring_holiday" ? latestSpringStartBefore(asOf) : asOf;
+  const fullYears = effectiveFullYears(worker, salaryDate);
+  const startSalary = Number(worker.base_start_salary || rules.defaultBaseSalary);
+  const beforeCap = startSalary + fullYears * Number(rules.annualRaise);
+  const strategy = worker.raise_strategy === "spring_holiday" ? "过年放假日加薪" : "入职日满年加薪";
+  return `${strategy}：${money(startSalary)} + ${fullYears}年 × ${money(rules.annualRaise)} = ${money(beforeCap)}，封顶 ${money(cap)} 后当前底薪 ${money(salary.baseSalary)}`;
+}
+
+function formatYears(value) {
+  return (Math.round(Number(value || 0) * 10) / 10).toFixed(1);
 }
 
 async function saveWorker(event) {
