@@ -41,7 +41,7 @@
             </div>
           </div>
 
-          <div class="month-row">
+          <div class="month-row" hidden>
             <label>
               年份兜底
               <input id="yearInput" inputmode="numeric" type="number" min="2020" max="2100" />
@@ -55,6 +55,7 @@
 
           <div class="actions sticky-actions">
             <button class="primary" id="generateBtn" type="button">生成工资条</button>
+            <button id="sampleAttendanceBtn" type="button">示例数据</button>
           </div>
 
           <div class="summary-grid" id="summaryGrid"></div>
@@ -103,6 +104,6 @@
 
     <div class="toast" id="toast"></div>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="./excel-app.js?v=20260723g"></script>
+    <script src="./excel-app.js?v=20260723h"></script>
   </body>
 </html>
