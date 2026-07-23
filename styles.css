@@ -101,6 +101,61 @@ button:disabled {
   justify-content: flex-end;
 }
 
+.version-switcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #eef5f3;
+}
+
+.version-switcher button {
+  min-height: 40px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.version-switcher button.active {
+  background: var(--card);
+  border-color: var(--line);
+  color: var(--brand-dark);
+  box-shadow: 0 5px 14px rgba(15, 118, 110, 0.12);
+}
+
+.version-shell {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.version-shell.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.embedded-app {
+  display: block;
+  width: 100%;
+  min-height: calc(100vh - 132px);
+  border: 0;
+}
+
+.embedded body {
+  background: transparent;
+}
+
+.embedded .app {
+  width: 100%;
+  padding: 0 0 20px;
+}
+
+.embedded .topbar {
+  display: none;
+}
+
 .eyebrow {
   margin: 0 0 4px;
   color: var(--brand);
