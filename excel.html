@@ -15,7 +15,10 @@
           <p class="eyebrow">老板工资助手</p>
           <h1>工资条管理 Excel 版</h1>
         </div>
-        <div class="status-pill" id="syncStatus">未导入</div>
+        <div class="topbar-actions">
+          <a class="button-like" href="./index.html">切换数据库版</a>
+          <div class="status-pill" id="syncStatus">未导入</div>
+        </div>
       </header>
 
       <section class="workspace">
@@ -23,21 +26,21 @@
           <div class="panel-title">
             <div>
               <h2>Excel 工人资料</h2>
-              <p>下载固定模板，维护工人资料后上传。上传成功后会保存到本机浏览器，下次打开不用重复上传。</p>
+              <p>默认已内置当前真实工人资料。后续工人变更时，下载当前数据，改完再上传，上传成功后会保存为本机最新版。</p>
             </div>
           </div>
 
           <div class="actions">
-            <a class="button-like primary-link" href="./templates/工人资料模板.xlsx" download>下载 Excel 模板</a>
+            <a class="button-like primary-link" href="./templates/工人资料_2026-07-23版.xlsx" download>下载真实数据 Excel</a>
+            <button id="downloadCurrentBtn" type="button">下载当前数据</button>
             <label class="button-like">
-              上传 Excel
+              上传新版 Excel
               <input id="excelInput" type="file" accept=".xlsx,.xls" hidden />
             </label>
-            <button id="clearExcelBtn" class="danger" type="button">清除本机 Excel 数据</button>
-            <a class="button-like" href="./index.html">打开数据库版</a>
+            <button id="clearExcelBtn" class="danger" type="button">恢复内置真实数据</button>
           </div>
 
-          <p class="meta" id="dataStatus">还没有导入 Excel。请先下载模板，按固定字段填写后上传。</p>
+          <p class="meta" id="dataStatus">正在加载内置真实工人资料。</p>
           <div class="worker-list" id="workerList"></div>
         </section>
 
