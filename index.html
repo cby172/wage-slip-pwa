@@ -41,6 +41,7 @@
             <button class="tab active" data-panel="panel-payroll" type="button">算工资</button>
             <button class="tab" data-panel="panel-workers" type="button">工人</button>
             <button class="tab" data-panel="panel-rules" type="button">规则</button>
+            <button class="tab" data-panel="panel-worker-stats" type="button">统计</button>
           </nav>
 
           <section class="panel active" id="panel-payroll">
@@ -188,6 +189,16 @@
           </section>
           </section>
 
+          <section class="panel" id="panel-worker-stats">
+          <div class="panel-title">
+            <div>
+              <h2>工人统计</h2>
+              <p>这里只查看，不修改。工龄、底薪和闲置时间会按当前日期和数据库资料自动计算。</p>
+            </div>
+          </div>
+          <div class="worker-stats" id="dbWorkerStats"></div>
+          </section>
+
           <section class="panel" id="panel-history">
           <div class="panel-title">
             <div>
@@ -205,7 +216,7 @@
       </section>
 
       <section class="version-shell" id="excelShell" hidden>
-        <iframe class="embedded-app" id="excelFrame" title="Excel 版工资条管理" src="./excel.html?embedded=1&v=20260723d" scrolling="no"></iframe>
+        <iframe class="embedded-app" id="excelFrame" title="Excel 版工资条管理" src="./excel.html?embedded=1&v=20260723e" scrolling="no"></iframe>
       </section>
     </main>
 
@@ -213,7 +224,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./config.js?v=20260723e"></script>
-    <script src="./app.js?v=20260723e"></script>
+    <script src="./app.js?v=20260723f"></script>
     <script>
       (() => {
         const dbButton = document.getElementById("dbModeBtn");
