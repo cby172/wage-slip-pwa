@@ -25,6 +25,10 @@
         <button class="active" id="dbModeBtn" type="button">数据库版</button>
         <button id="excelModeBtn" type="button">Excel 版</button>
       </nav>
+      <div class="default-version-row">
+        <button id="setDefaultVersionBtn" type="button">设当前版本为默认</button>
+        <span class="meta" id="defaultVersionText">默认打开数据库版</span>
+      </div>
 
       <section class="version-shell active" id="dbShell">
         <section class="setup-alert" id="configAlert" hidden>
@@ -214,11 +218,21 @@
       (() => {
         const dbButton = document.getElementById("dbModeBtn");
         const excelButton = document.getElementById("excelModeBtn");
+        const defaultButton = document.getElementById("setDefaultVersionBtn");
+        const defaultText = document.getElementById("defaultVersionText");
         const dbShell = document.getElementById("dbShell");
         const excelShell = document.getElementById("excelShell");
+        const storageKey = "wage_default_version";
+        let currentMode = "db";
         let hideTimer = null;
+        function updateDefaultText() {
+          const saved = localStorage.getItem(storageKey) === "excel" ? "Excel版" : "数据库版";
+          const current = currentMode === "excel" ? "Excel版" : "数据库版";
+          defaultText.textContent = `默认打开${saved}；当前是${current}`;
+        }
         function show(mode) {
           const excel = mode === "excel";
+          currentMode = excel ? "excel" : "db";
           clearTimeout(hideTimer);
           dbButton.classList.toggle("active", !excel);
           excelButton.classList.toggle("active", excel);
@@ -232,9 +246,15 @@
             dbShell.hidden = excel;
             excelShell.hidden = !excel;
           }, 190);
+          updateDefaultText();
         }
         dbButton.addEventListener("click", () => show("db"));
         excelButton.addEventListener("click", () => show("excel"));
+        defaultButton.addEventListener("click", () => {
+          localStorage.setItem(storageKey, currentMode);
+          updateDefaultText();
+        });
+        show(localStorage.getItem(storageKey) === "excel" ? "excel" : "db");
       })();
     </script>
   </body>
