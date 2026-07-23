@@ -351,6 +351,60 @@ textarea:focus {
   gap: 12px;
 }
 
+.worker-section {
+  display: grid;
+  gap: 10px;
+}
+
+.worker-section + .worker-section {
+  margin-top: 16px;
+}
+
+.worker-section h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.add-worker-section {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.inline-worker-form {
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.interruptions-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.interruption-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 8px;
+  align-items: end;
+  border: 1px solid #d7e5e1;
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+}
+
+.interruption-empty {
+  border: 1px dashed #cbd8d4;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.secondary-small {
+  width: fit-content;
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
 .field-block,
 .wide {
   grid-column: 1 / -1;
@@ -786,6 +840,10 @@ code {
   .slip-actions button,
   .history-actions button {
     flex: 1;
+  }
+
+  .interruption-row {
+    grid-template-columns: 1fr;
   }
 
   .stat-age strong {
