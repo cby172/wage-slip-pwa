@@ -102,6 +102,7 @@ let latestResult = null;
 const $ = (id) => document.getElementById(id);
 
 function boot() {
+  initExcelTabs();
   $("yearInput").value = new Date().getFullYear();
   $("attendanceInput").value = sampleAttendance;
   $("excelInput").addEventListener("change", handleExcelUpload);
@@ -109,12 +110,56 @@ function boot() {
   $("clearExcelBtn").addEventListener("click", clearSavedExcel);
   $("downloadCurrentBtn").addEventListener("click", downloadCurrentExcel);
   $("slipList").addEventListener("click", copySingleSlip);
+  initDropUpload();
   loadSavedExcel();
 }
 
 async function handleExcelUpload(event) {
   const file = event.target.files?.[0];
   if (!file) return;
+  await importExcelFile(file);
+  event.target.value = "";
+}
+
+function initExcelTabs() {
+  document.querySelectorAll(".excel-tabs .tab").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".excel-tabs .tab").forEach((item) => item.classList.remove("active"));
+      document.querySelectorAll("#excel-panel-payroll, #excel-panel-data").forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      $(button.dataset.panel).classList.add("active");
+    });
+  });
+}
+
+function initDropUpload() {
+  const zone = $("uploadZone");
+  if (!zone) return;
+  ["dragenter", "dragover"].forEach((eventName) => {
+    zone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      zone.classList.add("dragging");
+    });
+  });
+  ["dragleave", "drop"].forEach((eventName) => {
+    zone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      zone.classList.remove("dragging");
+    });
+  });
+  zone.addEventListener("drop", async (event) => {
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+    await importExcelFile(file);
+  });
+  zone.addEventListener("click", () => $("excelInput").click());
+}
+
+async function importExcelFile(file) {
+  if (!/\.(xlsx|xls)$/i.test(file.name)) {
+    toast("请上传 Excel 文件");
+    return;
+  }
   try {
     setStatus("读取中", "warn");
     const buffer = await file.arrayBuffer();
@@ -131,8 +176,6 @@ async function handleExcelUpload(event) {
   } catch (error) {
     setStatus("异常", "warn");
     toast(error.message || "Excel 识别失败");
-  } finally {
-    event.target.value = "";
   }
 }
 
