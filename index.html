@@ -205,7 +205,7 @@
       </section>
 
       <section class="version-shell" id="excelShell" hidden>
-        <iframe class="embedded-app" id="excelFrame" title="Excel 版工资条管理" src="./excel.html?embedded=1"></iframe>
+        <iframe class="embedded-app" id="excelFrame" title="Excel 版工资条管理" src="./excel.html?embedded=1&v=20260723d" scrolling="no"></iframe>
       </section>
     </main>
 
@@ -222,6 +222,7 @@
         const defaultText = document.getElementById("defaultVersionText");
         const dbShell = document.getElementById("dbShell");
         const excelShell = document.getElementById("excelShell");
+        const excelFrame = document.getElementById("excelFrame");
         const storageKey = "wage_default_version";
         let currentMode = "db";
         let hideTimer = null;
@@ -253,6 +254,11 @@
         defaultButton.addEventListener("click", () => {
           localStorage.setItem(storageKey, currentMode);
           updateDefaultText();
+        });
+        window.addEventListener("message", (event) => {
+          if (event.origin !== location.origin) return;
+          if (event.data?.type !== "excel-height") return;
+          excelFrame.style.height = `${Math.max(520, Number(event.data.height || 0))}px`;
         });
         show(localStorage.getItem(storageKey) === "excel" ? "excel" : "db");
       })();
