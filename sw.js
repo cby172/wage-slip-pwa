@@ -1,12 +1,15 @@
-const CACHE_NAME = "wage-slip-pwa-v6";
+const CACHE_NAME = "wage-slip-pwa-v7";
 const ASSETS = [
   "./",
   "./index.html",
+  "./excel.html",
   "./styles.css",
   "./app.js",
+  "./excel-app.js",
   "./config.js",
   "./manifest.webmanifest",
-  "./icon.svg"
+  "./icon.svg",
+  "./templates/工人资料模板.xlsx"
 ];
 
 self.addEventListener("install", (event) => {
