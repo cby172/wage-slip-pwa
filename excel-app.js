@@ -112,14 +112,28 @@ function boot() {
   initExcelTabs();
   initEmbeddedResize();
   $("yearInput").value = new Date().getFullYear();
-  $("attendanceInput").value = sampleAttendance;
+  initAttendancePlaceholder();
   $("excelInput").addEventListener("change", handleExcelUpload);
   $("generateBtn").addEventListener("click", generatePayroll);
+  $("sampleAttendanceBtn").addEventListener("click", fillSampleAttendance);
   $("clearExcelBtn").addEventListener("click", clearSavedExcel);
   $("downloadCurrentBtn").addEventListener("click", downloadCurrentExcel);
   $("slipList").addEventListener("click", copySingleSlip);
   initDropUpload();
   loadSavedExcel();
+}
+
+function initAttendancePlaceholder() {
+  const input = $("attendanceInput");
+  input.value = "";
+  input.placeholder = sampleAttendance;
+}
+
+function fillSampleAttendance() {
+  const input = $("attendanceInput");
+  input.value = sampleAttendance;
+  input.focus();
+  notifyParentHeight();
 }
 
 async function handleExcelUpload(event) {
