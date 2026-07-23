@@ -485,6 +485,34 @@ function validateInterruptions(items) {
   return "";
 }
 
+function openInterruptionOnStop(items, today = dateKey(new Date())) {
+  const normalized = normalizeInterruptions(items);
+  if (normalized.some((item) => item.start && !item.end)) return normalized;
+  return [...normalized, { start: today, end: "", note: "停用" }];
+}
+
+function closeInterruptionOnResume(items, today = dateKey(new Date())) {
+  const normalized = normalizeInterruptions(items);
+  for (let index = normalized.length - 1; index >= 0; index -= 1) {
+    if (normalized[index].start && !normalized[index].end) {
+      normalized[index] = { ...normalized[index], end: today };
+      break;
+    }
+  }
+  return normalized;
+}
+
+function syncLifecycleInterruptions(payload, previousWorker = null) {
+  const wasActive = previousWorker ? Boolean(previousWorker.active) : true;
+  payload.interruptions = normalizeInterruptions(payload.interruptions || []);
+  if (!payload.active) {
+    payload.interruptions = openInterruptionOnStop(payload.interruptions);
+  } else if (!wasActive || payload.interruptions.some((item) => item.start && !item.end)) {
+    payload.interruptions = closeInterruptionOnResume(payload.interruptions);
+  }
+  return payload;
+}
+
 function renderWorkerStats() {
   const target = $("dbWorkerStats");
   if (!target) return;
@@ -592,6 +620,7 @@ async function saveWorker(event) {
     work_note: $("workNote").value.trim(),
     interruptions
   };
+  syncLifecycleInterruptions(payload, workers.find((item) => item.id === id));
   if (!payload.name || !payload.hire_date) return toast("请填写姓名和入职日期");
   const request = id
     ? supabaseClient.from("workers").update(payload).eq("id", id)
@@ -658,6 +687,7 @@ async function saveInlineWorker(event) {
     work_note: form.elements.work_note.value.trim(),
     interruptions
   };
+  syncLifecycleInterruptions(payload, workers.find((item) => item.id === id));
   if (!payload.name || !payload.hire_date) return toast("请填写姓名和入职日期");
   const { error } = await supabaseClient.from("workers").update(payload).eq("id", id);
   if (error) return handleSupabaseError(error);
@@ -679,11 +709,15 @@ function resetWorkerForm() {
 async function toggleWorker(id) {
   const worker = workers.find((item) => item.id === id);
   if (!worker) return;
-  const { error } = await supabaseClient.from("workers").update({ active: !worker.active }).eq("id", id);
+  const nextActive = !worker.active;
+  const interruptions = nextActive
+    ? closeInterruptionOnResume(worker.interruptions || [])
+    : openInterruptionOnStop(worker.interruptions || []);
+  const { error } = await supabaseClient.from("workers").update({ active: nextActive, interruptions }).eq("id", id);
   if (error) return handleSupabaseError(error);
   await loadWorkers();
   renderWorkers();
-  toast(worker.active ? "已停用" : "已启用");
+  toast(worker.active ? "已停用，并自动记录中断开始日期" : "已启用，并自动补上中断结束日期");
 }
 
 async function deleteWorker(id) {
