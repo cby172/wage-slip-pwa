@@ -283,6 +283,11 @@ textarea {
   line-height: 1.55;
 }
 
+textarea::placeholder {
+  color: #a7b8b3;
+  opacity: 0.8;
+}
+
 input:focus,
 select:focus,
 textarea:focus {
@@ -592,6 +597,7 @@ textarea:focus {
 
 .slip-list,
 .worker-list,
+.result-summary,
 .history-list {
   display: grid;
   gap: 10px;
@@ -632,6 +638,47 @@ textarea:focus {
   line-height: 1.55;
   font-family: inherit;
   font-size: 14px;
+}
+
+.result-summary-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+  padding: 12px;
+}
+
+.result-summary-card h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.result-summary-list {
+  display: grid;
+  gap: 8px;
+}
+
+.result-summary-item {
+  border: 1px solid #d7e5e1;
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px 12px;
+}
+
+.result-summary-item strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.result-summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.result-summary-meta span {
+  white-space: nowrap;
 }
 
 .badge {
