@@ -141,6 +141,7 @@ function initMonthInputs() {
 function bindEvents() {
   $("reloadTopBtn").addEventListener("click", loadAll);
   $("generateBtn").addEventListener("click", generatePayroll);
+  $("sampleAttendanceBtn").addEventListener("click", fillSampleAttendance);
   $("slipList").addEventListener("click", copySingleSlip);
   $("workerForm").addEventListener("submit", saveWorker);
   $("resetWorkerBtn").addEventListener("click", resetWorkerForm);
@@ -155,7 +156,7 @@ async function boot() {
   initTabs();
   initMonthInputs();
   bindEvents();
-  $("attendanceInput").value = sampleAttendance;
+  initAttendancePlaceholder();
 
   if (!isConfigured()) {
     $("configAlert").hidden = false;
@@ -299,6 +300,18 @@ async function saveRules() {
   if (error) return handleSupabaseError(error);
   toast("规则已保存");
   renderWorkerStats();
+}
+
+function initAttendancePlaceholder() {
+  const input = $("attendanceInput");
+  input.value = "";
+  input.placeholder = sampleAttendance;
+}
+
+function fillSampleAttendance() {
+  const input = $("attendanceInput");
+  input.value = sampleAttendance;
+  input.focus();
 }
 
 function renderWorkers() {
