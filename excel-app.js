@@ -212,11 +212,13 @@ function initDropUpload() {
 
 async function importExcelFile(file) {
   if (!/\.(xlsx|xls)$/i.test(file.name)) {
+    showImportMessage("error", "文件类型不对", "请上传 .xlsx 或 .xls 格式的 Excel 文件。");
     toast("请上传 Excel 文件");
     return;
   }
   try {
     setStatus("读取中", "warn");
+    showImportMessage("info", "正在读取 Excel", `文件：${file.name}`);
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
     const parsed = parseWorkbook(workbook, file.name);
@@ -227,11 +229,67 @@ async function importExcelFile(file) {
     renderWorkers();
     resetPayrollResult();
     setStatus("已保存", "ok");
-    toast("Excel 已识别并保存到本机");
+    const activeCount = parsed.workers.filter((worker) => worker.active).length;
+    const warningText = parsed.importWarnings?.length ? ` 注意：${parsed.importWarnings.join("；")}` : "";
+    showImportMessage(parsed.importWarnings?.length ? "warn" : "success", "上传成功，已保存为本机最新版", `文件：${file.name}；识别工人 ${parsed.workers.length} 人，在职 ${activeCount} 人。下次打开会自动使用这份数据。${warningText}`);
+    toast("Excel 上传成功");
   } catch (error) {
     setStatus("异常", "warn");
-    toast(error.message || "Excel 识别失败");
+    const detail = explainImportError(error);
+    showImportMessage("error", detail.title, detail.body);
+    toast("Excel 上传失败，查看错误提示");
   }
+}
+
+function showImportMessage(type, title, body) {
+  const target = $("importMessage");
+  if (!target) return;
+  target.hidden = false;
+  target.className = `import-message ${type}`;
+  target.innerHTML = `<strong>${escapeHtml(title)}</strong><p>${escapeHtml(body)}</p>`;
+  notifyParentHeight();
+}
+
+function explainImportError(error) {
+  const message = error?.message || "Excel 识别失败";
+  if (message.includes("中断记录里有工人不在")) {
+    const names = message.split("：")[1] || "";
+    return {
+      title: "上传失败：中断记录里有人名对不上",
+      body: `中断记录表里还有 ${names}，但工人资料表里没有这些工人。处理办法：把这些工人加回“工人资料”，或者删除“中断记录”里对应的人名行。`
+    };
+  }
+  if (message.includes("缺少字段")) {
+    return {
+      title: "上传失败：Excel 字段被删了",
+      body: `${message}。请不要删除第一行字段名；可以下载当前数据后在原字段下面改内容。`
+    };
+  }
+  if (message.includes("缺少工作表")) {
+    return {
+      title: "上传失败：Excel 工作表缺失",
+      body: `${message}。必须保留“工人资料”“中断记录”“规则参数”这些工作表名称。`
+    };
+  }
+  if (message.includes("入职日期")) {
+    return {
+      title: "上传失败：入职日期格式错误",
+      body: `${message}。日期建议填成 2026-04-01 这种格式。`
+    };
+  }
+  if (message.includes("加薪策略")) {
+    return {
+      title: "上传失败：加薪策略填写不对",
+      body: `${message}。只能填“入职日满年加薪”或“过年放假日加薪”。如果不确定，可以留空，系统会按入职日满年加薪处理。`
+    };
+  }
+  if (message.includes("底薪") || message.includes("规则参数")) {
+    return {
+      title: "上传失败：数字格式错误",
+      body: `${message}。底薪、津贴、规则参数只能填数字或留空。`
+    };
+  }
+  return { title: "上传失败：Excel 格式未通过", body: message };
 }
 
 function parseWorkbook(workbook, fileName) {
@@ -255,13 +313,14 @@ function parseWorkbook(workbook, fileName) {
   if (!parsedWorkers.length) throw new Error("工人资料表没有识别到工人");
   const workerNames = new Set(parsedWorkers.map((worker) => worker.name));
   const unknownInterruptionNames = [...interruptionsByName.keys()].filter((name) => !workerNames.has(name));
-  if (unknownInterruptionNames.length) throw new Error(`中断记录里有工人不在“工人资料”表中：${unknownInterruptionNames.join("、")}`);
+  unknownInterruptionNames.forEach((name) => interruptionsByName.delete(name));
   return {
     schemaVersion: EXCEL_APP_VERSION,
     sourceFile: fileName,
     savedAt: new Date().toISOString(),
     rules: parsedRules,
-    workers: parsedWorkers
+    workers: parsedWorkers,
+    importWarnings: unknownInterruptionNames.length ? [`中断记录里有 ${unknownInterruptionNames.join("、")}，但工人资料里没有这些人，系统已忽略这些中断记录`] : []
   };
 }
 
