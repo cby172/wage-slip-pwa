@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>工资条管理</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">老板工资助手</p>
+          <h1>工资条管理</h1>
+        </div>
+        <div class="status-pill" id="syncStatus">未连接</div>
+      </header>
+
+      <section class="setup-alert" id="configAlert" hidden>
+        <b>还没有配置 Supabase</b>
+        <span>先在 <code>config.js</code> 里填写 Project URL 和 anon public key。</span>
+      </section>
+
+      <section class="workspace" id="appView" hidden>
+        <nav class="tabs" aria-label="主要功能">
+          <button class="tab active" data-panel="panel-payroll" type="button">算工资</button>
+          <button class="tab" data-panel="panel-workers" type="button">工人</button>
+          <button class="tab" data-panel="panel-rules" type="button">规则</button>
+          <button class="tab" data-panel="panel-history" type="button">历史</button>
+        </nav>
+
+        <section class="panel active" id="panel-payroll">
+          <div class="panel-title">
+            <div>
+              <h2>生成工资条</h2>
+              <p>选择月份，粘贴老板平时记的请假内容，一键生成每个工人的工资条。</p>
+            </div>
+            <button id="reloadTopBtn" type="button">刷新</button>
+          </div>
+
+          <div class="month-row">
+            <label>
+              年份
+              <input id="yearInput" inputmode="numeric" type="number" min="2020" max="2100" />
+            </label>
+            <label>
+              月份
+              <select id="monthInput"></select>
+            </label>
+          </div>
+
+          <label class="field-block">
+            请假记录
+            <textarea id="attendanceInput" rows="8" placeholder="例如：&#10;赵师 9，/14，20/，22/，23/，27，预支1800元。&#10;范师 15，30，"></textarea>
+          </label>
+
+          <div class="actions sticky-actions">
+            <button class="primary" id="generateBtn" type="button">生成并保存</button>
+            <button id="previewBtn" type="button">只预览</button>
+            <button id="copyAllBtn" type="button">复制全部</button>
+          </div>
+
+          <div class="summary-grid" id="summaryGrid"></div>
+          <section class="slip-list" id="slipList" aria-label="单人工资条"></section>
+        </section>
+
+        <section class="panel" id="panel-workers">
+          <div class="panel-title">
+            <div>
+              <h2>工人管理</h2>
+              <p>新增、修改、停用工人。工资会按规则自动算，也可以临时手动覆盖底薪。</p>
+            </div>
+          </div>
+
+          <form class="worker-form" id="workerForm">
+            <input id="workerId" type="hidden" />
+            <label>
+              姓名
+              <input id="workerName" required type="text" />
+            </label>
+            <label>
+              入职日期
+              <input id="hireDate" required type="date" />
+            </label>
+            <label>
+              起始底薪
+              <input id="baseStartSalary" inputmode="numeric" min="0" step="1" type="number" />
+            </label>
+            <label>
+              手动底薪
+              <input id="baseSalaryOverride" inputmode="numeric" min="0" step="1" type="number" placeholder="不填则自动算" />
+            </label>
+            <label>
+              加薪策略
+              <select id="raiseStrategy">
+                <option value="anniversary">入职日满年加薪</option>
+                <option value="spring_holiday">过年放假日加薪</option>
+              </select>
+            </label>
+            <label class="check-row">
+              <input id="warehouseManager" type="checkbox" />
+              仓库管理员，加 400 津贴
+            </label>
+            <label class="check-row">
+              <input id="workerActive" type="checkbox" checked />
+              在职，参与算工资
+            </label>
+            <label class="wide">
+              中断记录
+              <textarea id="interruptionsInput" rows="3" placeholder="一行一段：2025-04-01 到 2026-03-31 备注"></textarea>
+            </label>
+            <label class="wide">
+              备注
+              <textarea id="workNote" rows="3" placeholder="历史工作段、特殊说明等"></textarea>
+            </label>
+            <div class="actions wide">
+              <button class="primary" type="submit">保存工人</button>
+              <button id="resetWorkerBtn" type="button">清空</button>
+            </div>
+          </form>
+
+          <div class="worker-list" id="workerList"></div>
+        </section>
+
+        <section class="panel" id="panel-rules">
+          <div class="panel-title">
+            <div>
+              <h2>工资规则</h2>
+              <p>这些是老板常改的参数。复杂春节算法已按规则文档写进代码。</p>
+            </div>
+          </div>
+
+          <div class="rule-grid">
+            <label>
+              默认起始底薪
+              <input id="ruleDefaultBaseSalary" inputmode="numeric" min="0" step="1" type="number" />
+            </label>
+            <label>
+              每满一年加薪
+              <input id="ruleAnnualRaise" inputmode="numeric" min="0" step="1" type="number" />
+            </label>
+            <label>
+              底薪封顶
+              <input id="ruleSalaryCap" inputmode="numeric" min="0" step="1" type="number" />
+            </label>
+            <label>
+              仓管津贴
+              <input id="ruleWarehouseAllowance" inputmode="numeric" min="0" step="1" type="number" />
+            </label>
+            <label>
+              有薪假范围
+              <input id="rulePaidLeaveLimit" inputmode="decimal" min="0" step="0.5" type="number" />
+            </label>
+            <label>
+              有薪假天数
+              <input id="rulePaidLeaveDays" inputmode="decimal" min="0" step="0.5" type="number" />
+            </label>
+            <label>
+              春节前双薪天数
+              <input id="ruleDoubleDays" inputmode="numeric" min="0" step="1" type="number" />
+            </label>
+            <label>
+              零散工资并入阈值
+              <input id="ruleFragmentThreshold" inputmode="numeric" min="0" step="1" type="number" />
+            </label>
+            <label class="wide">
+              春节放假日期覆盖
+              <textarea id="ruleSpringOverrides" rows="3" placeholder="一行一个：2026=2026-02-14。留空则按农历自动算。"></textarea>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button class="primary" id="saveRulesBtn" type="button">保存规则</button>
+            <button id="seedBtn" type="button">补齐真实工人资料</button>
+          </div>
+
+          <section class="rule-note">
+            <h3>当前关键规则</h3>
+            <p>春节前休 3 天；腊月 30 天时腊月 28 放假，腊月 29 天时腊月 27 放假。春节前 30 天为双薪，请假扣双倍。普通月份 3 天以内只免 1 天，4 天及以上请多少扣多少。</p>
+          </section>
+        </section>
+
+        <section class="panel" id="panel-history">
+          <div class="panel-title">
+            <div>
+              <h2>历史与备份</h2>
+              <p>历史工资条保存在 Supabase。导出 JSON 是额外备份，建议每月发完工资导出一次。</p>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="reloadBtn" type="button">刷新数据</button>
+            <button id="exportBtn" type="button">导出备份</button>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </section>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
