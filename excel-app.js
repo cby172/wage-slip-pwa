@@ -120,6 +120,7 @@ function boot() {
   $("downloadCurrentBtn").addEventListener("click", downloadCurrentExcel);
   $("slipList").addEventListener("click", copySingleSlip);
   initDropUpload();
+  bindAttendanceHintBehavior();
   loadSavedExcel();
 }
 
@@ -134,6 +135,17 @@ function fillSampleAttendance() {
   input.value = sampleAttendance;
   input.focus();
   notifyParentHeight();
+}
+
+function bindAttendanceHintBehavior() {
+  const input = $("attendanceInput");
+  if (!input) return;
+  input.addEventListener("focus", () => {
+    if (!input.value) input.placeholder = "";
+  });
+  input.addEventListener("blur", () => {
+    if (!input.value) input.placeholder = sampleAttendance;
+  });
 }
 
 async function handleExcelUpload(event) {
@@ -661,6 +673,8 @@ function resetPayrollResult(message = "上传 Excel 并粘贴请假记录后，�
   latestResult = null;
   $("summaryGrid").innerHTML = "";
   $("slipList").innerHTML = `<p class="meta">${escapeHtml(message)}</p>`;
+  const summary = $("resultSummary");
+  if (summary) summary.innerHTML = "";
   notifyParentHeight();
 }
 
@@ -874,7 +888,31 @@ function renderPayrollResult(result) {
     card.innerHTML = `<div class="slip-head"><div><strong>${escapeHtml(row.worker.name)}</strong><p class="meta">实发 ${money(row.net)} 元</p></div><div class="slip-actions"><button type="button" data-copy-slip="${index}">复制</button></div></div><pre>${escapeHtml(row.slipText)}</pre>`;
     $("slipList").appendChild(card);
   });
+  renderPayrollSummary(result);
   notifyParentHeight();
+}
+
+function renderPayrollSummary(result) {
+  const target = $("resultSummary");
+  if (!target) return;
+  target.innerHTML = `<section class="result-summary-card">
+    <h3>工资汇总</h3>
+    <div class="result-summary-list">
+      ${result.rows
+        .map(
+          (row) => `<article class="result-summary-item">
+            <strong>@${escapeHtml(row.worker.name)}</strong>
+            <div class="result-summary-meta">
+              <span>应发 ${money(row.gross)} 元</span>
+              <span>实发 ${money(row.net)} 元</span>
+              <span>预支 ${money(row.record.advance)} 元</span>
+              <span>${escapeHtml(row.leaveStats.totalLeave ? `请假 ${row.leaveStats.totalLeave} 天` : "无请假")}</span>
+            </div>
+          </article>`
+        )
+        .join("")}
+    </div>
+  </section>`;
 }
 
 async function copySingleSlip(event) {
