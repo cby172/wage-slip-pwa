@@ -652,6 +652,18 @@ textarea:focus {
   font-size: 16px;
 }
 
+.result-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.result-summary-head h3 {
+  margin: 0;
+}
+
 .result-summary-text {
   margin: 0;
   white-space: pre-wrap;
