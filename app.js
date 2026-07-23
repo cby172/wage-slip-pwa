@@ -150,6 +150,7 @@ function bindEvents() {
   $("seedBtn").addEventListener("click", seedWorkers);
   $("reloadBtn").addEventListener("click", loadAll);
   $("exportBtn").addEventListener("click", exportBackup);
+  bindAttendanceHintBehavior();
 }
 
 async function boot() {
@@ -312,6 +313,17 @@ function fillSampleAttendance() {
   const input = $("attendanceInput");
   input.value = sampleAttendance;
   input.focus();
+}
+
+function bindAttendanceHintBehavior() {
+  const input = $("attendanceInput");
+  if (!input) return;
+  input.addEventListener("focus", () => {
+    if (!input.value) input.placeholder = "";
+  });
+  input.addEventListener("blur", () => {
+    if (!input.value) input.placeholder = sampleAttendance;
+  });
 }
 
 function renderWorkers() {
@@ -524,6 +536,8 @@ function resetPayrollResult() {
   latestResult = null;
   $("summaryGrid").innerHTML = "";
   $("slipList").innerHTML = '<p class="meta">粘贴当月请假记录后，点击“生成工资条”。</p>';
+  const summary = $("resultSummary");
+  if (summary) summary.innerHTML = "";
 }
 
 function generatePayroll(showToast = true) {
@@ -862,6 +876,34 @@ function renderPayrollResult(result) {
     `;
     list.appendChild(card);
   });
+  renderPayrollSummary(result);
+}
+
+function renderPayrollSummary(result) {
+  const target = $("resultSummary");
+  if (!target) return;
+  target.innerHTML = `
+    <section class="result-summary-card">
+      <h3>工资汇总</h3>
+      <div class="result-summary-list">
+        ${result.rows
+          .map(
+            (row) => `
+              <article class="result-summary-item">
+                <strong>@${escapeHtml(row.worker.name)}</strong>
+                <div class="result-summary-meta">
+                  <span>应发 ${money(row.gross)} 元</span>
+                  <span>实发 ${money(row.net)} 元</span>
+                  <span>预支 ${money(row.record.advance)} 元</span>
+                  <span>${escapeHtml(row.leaveStats.totalLeave ? `请假 ${row.leaveStats.totalLeave} 天` : "无请假")}</span>
+                </div>
+              </article>
+            `
+          )
+          .join("")}
+      </div>
+    </section>
+  `;
 }
 
 async function copyAllSlips() {
