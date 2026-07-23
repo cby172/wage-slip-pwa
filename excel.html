@@ -27,29 +27,12 @@
       </header>
 
       <section class="workspace">
-        <section class="panel active">
-          <div class="panel-title">
-            <div>
-              <h2>Excel 工人资料</h2>
-              <p>默认已内置当前真实工人资料。后续工人变更时，下载当前数据，改完再上传，上传成功后会保存为本机最新版。</p>
-            </div>
-          </div>
+        <nav class="tabs excel-tabs" aria-label="Excel 版功能">
+          <button class="tab active" data-panel="excel-panel-payroll" type="button">算工资</button>
+          <button class="tab" data-panel="excel-panel-data" type="button">Excel数据</button>
+        </nav>
 
-          <div class="actions">
-            <a class="button-like primary-link" href="./templates/工人资料_2026-07-23版.xlsx" download>下载真实数据 Excel</a>
-            <button id="downloadCurrentBtn" type="button">下载当前数据</button>
-            <label class="button-like">
-              上传新版 Excel
-              <input id="excelInput" type="file" accept=".xlsx,.xls" hidden />
-            </label>
-            <button id="clearExcelBtn" class="danger" type="button">恢复内置真实数据</button>
-          </div>
-
-          <p class="meta" id="dataStatus">正在加载内置真实工人资料。</p>
-          <div class="worker-list" id="workerList"></div>
-        </section>
-
-        <section class="panel active">
+        <section class="panel active" id="excel-panel-payroll">
           <div class="panel-title">
             <div>
               <h2>生成工资条</h2>
@@ -76,11 +59,38 @@
           <div class="summary-grid" id="summaryGrid"></div>
           <section class="slip-list" id="slipList" aria-label="单人工资条"></section>
         </section>
+
+        <section class="panel" id="excel-panel-data">
+          <div class="panel-title">
+            <div>
+              <h2>Excel 工人资料</h2>
+              <p>默认已内置当前真实工人资料。后续工人变更时，下载当前数据，改完再上传，上传成功后会保存为本机最新版。</p>
+            </div>
+          </div>
+
+          <div class="upload-zone" id="uploadZone">
+            <strong>拖拽 Excel 到这里上传</strong>
+            <p class="meta">也可以点击下面的“上传新版 Excel”。支持 .xlsx / .xls。</p>
+          </div>
+
+          <div class="actions">
+            <a class="button-like primary-link" href="./templates/工人资料_2026-07-23版.xlsx" download>下载真实数据 Excel</a>
+            <button id="downloadCurrentBtn" type="button">下载当前数据</button>
+            <label class="button-like">
+              上传新版 Excel
+              <input id="excelInput" type="file" accept=".xlsx,.xls" hidden />
+            </label>
+            <button id="clearExcelBtn" class="danger" type="button">恢复内置真实数据</button>
+          </div>
+
+          <p class="meta" id="dataStatus">正在加载内置真实工人资料。</p>
+          <div class="worker-list" id="workerList"></div>
+        </section>
       </section>
     </main>
 
     <div class="toast" id="toast"></div>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="./excel-app.js?v=20260723b"></script>
+    <script src="./excel-app.js?v=20260723c"></script>
   </body>
 </html>
