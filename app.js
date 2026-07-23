@@ -74,7 +74,8 @@ const initialWorkers = [
   }
 ];
 
-const sampleAttendance = `赵师 9，/14，20/，22/，23/，27，预支1800元。
+const sampleAttendance = `6月
+赵师 9，/14，20/，22/，23/，27，预支1800元。
 范师 15，30，
 王师 19，
 张师 28，
@@ -135,22 +136,11 @@ function initTabs() {
 function initMonthInputs() {
   const now = new Date();
   $("yearInput").value = now.getFullYear();
-  const monthSelect = $("monthInput");
-  monthSelect.innerHTML = "";
-  for (let month = 1; month <= 12; month += 1) {
-    const option = document.createElement("option");
-    option.value = String(month);
-    option.textContent = `${month}月`;
-    monthSelect.appendChild(option);
-  }
-  monthSelect.value = String(now.getMonth() + 1);
 }
 
 function bindEvents() {
   $("reloadTopBtn").addEventListener("click", loadAll);
-  $("previewBtn").addEventListener("click", previewPayroll);
-  $("generateBtn").addEventListener("click", savePayroll);
-  $("copyAllBtn").addEventListener("click", copyAllSlips);
+  $("generateBtn").addEventListener("click", generatePayroll);
   $("slipList").addEventListener("click", copySingleSlip);
   $("workerForm").addEventListener("submit", saveWorker);
   $("resetWorkerBtn").addEventListener("click", resetWorkerForm);
@@ -194,7 +184,7 @@ async function loadAll() {
   renderRules();
   renderWorkers();
   renderHistory();
-  previewPayroll(false);
+  resetPayrollResult();
   setStatus("已同步", "ok");
 }
 
@@ -425,23 +415,36 @@ async function seedWorkers() {
   toast("真实初始工人资料已补齐");
 }
 
-function previewPayroll(showToast = true) {
+function resetPayrollResult() {
+  latestResult = null;
+  $("summaryGrid").innerHTML = "";
+  $("slipList").innerHTML = '<p class="meta">粘贴当月请假记录后，点击“生成工资条”。</p>';
+}
+
+function generatePayroll(showToast = true) {
   if (!workers.length) {
     latestResult = null;
     $("summaryGrid").innerHTML = "";
     $("slipList").innerHTML = '<p class="meta">先添加工人，再生成工资条。</p>';
     return null;
   }
-  const period = getSelectedPeriod();
   const rawInput = $("attendanceInput").value.trim();
+  const period = getSelectedPeriod(rawInput, false);
+  if (!period) {
+    latestResult = null;
+    $("summaryGrid").innerHTML = "";
+    $("slipList").innerHTML = '<p class="meta">请在记录里写月份，例如第一行写“6月”。</p>';
+    toast("请在记录里写月份");
+    return null;
+  }
   latestResult = buildPayroll(period.year, period.month, rawInput);
   renderPayrollResult(latestResult);
-  if (showToast) toast("已预览");
+  if (showToast) toast("已生成");
   return latestResult;
 }
 
 async function savePayroll() {
-  const result = previewPayroll(false);
+  const result = generatePayroll(false);
   if (!result) return;
   setStatus("保存中", "warn");
   const { data: monthData, error: monthError } = await supabaseClient
@@ -485,7 +488,13 @@ function buildPayroll(year, month, rawInput) {
   const segments = getPayrollSegments(year, month);
   const parsed = parseAttendance(rawInput, workers);
   const activeWorkers = workers.filter((worker) => worker.active);
-  const rows = activeWorkers.map((worker) => buildWorkerPayroll(worker, parsed.records.get(worker.name) || emptyRecord(worker.name), year, month, monthDays, segments));
+  const activeByName = new Map(activeWorkers.map((worker) => [worker.name, worker]));
+  const orderedWorkers = parsed.order
+    .map((name) => activeByName.get(name))
+    .filter(Boolean);
+  const orderedNames = new Set(orderedWorkers.map((worker) => worker.name));
+  const remainingWorkers = activeWorkers.filter((worker) => !orderedNames.has(worker.name));
+  const rows = [...orderedWorkers, ...remainingWorkers].map((worker) => buildWorkerPayroll(worker, parsed.records.get(worker.name) || emptyRecord(worker.name), year, month, monthDays, segments));
   const totalGross = rows.reduce((sum, row) => sum + row.gross, 0);
   const totalNet = rows.reduce((sum, row) => sum + row.net, 0);
   const totalAdvance = rows.reduce((sum, row) => sum + row.record.advance, 0);
@@ -668,15 +677,17 @@ function getLunarParts(date) {
 
 function parseAttendance(input, workerList) {
   const records = new Map();
+  const order = [];
   const names = workerList.map((worker) => worker.name).sort((a, b) => b.length - a.length);
   input.split(/\r?\n/).forEach((line) => {
     const raw = line.trim();
-    if (!raw || /^\d{1,2}\s*月$/.test(raw)) return;
+    if (!raw || /^(?:20\d{2}\s*年\s*)?\d{1,2}\s*月份?$/.test(raw)) return;
     const name = names.find((item) => raw.startsWith(item));
     if (!name) return;
+    if (!records.has(name)) order.push(name);
     records.set(name, parseWorkerLine(name, raw.slice(name.length), raw));
   });
-  return { records };
+  return { records, order };
 }
 
 function parseWorkerLine(name, body, raw) {
@@ -749,7 +760,7 @@ function renderPayrollResult(result) {
 }
 
 async function copyAllSlips() {
-  if (!latestResult) previewPayroll(false);
+  if (!latestResult) generatePayroll(false);
   if (!latestResult) return;
   await copyText(latestResult.allText);
 }
@@ -795,10 +806,9 @@ function renderHistory() {
     `;
     card.querySelector("[data-load-history]").addEventListener("click", () => {
       $("yearInput").value = item.year;
-      $("monthInput").value = item.month;
       $("attendanceInput").value = item.raw_input || "";
       document.querySelector('[data-panel="panel-payroll"]').click();
-      previewPayroll();
+      generatePayroll();
     });
     list.appendChild(card);
   });
@@ -823,10 +833,23 @@ function exportBackup() {
   URL.revokeObjectURL(url);
 }
 
-function getSelectedPeriod() {
-  const year = Number($("yearInput").value);
-  const month = Number($("monthInput").value);
+function getSelectedPeriod(rawInput = $("attendanceInput")?.value || "", allowFallback = true) {
+  const parsed = parsePeriodFromInput(rawInput);
+  if (parsed) {
+    const year = parsed.year || Number($("yearInput").value) || new Date().getFullYear();
+    return { year, month: parsed.month, start: makeDate(year, parsed.month, 1), end: makeDate(year, parsed.month, daysInMonth(year, parsed.month)) };
+  }
+  if (!allowFallback) return null;
+  const now = new Date();
+  const year = Number($("yearInput").value) || now.getFullYear();
+  const month = now.getMonth() + 1;
   return { year, month, start: makeDate(year, month, 1), end: makeDate(year, month, daysInMonth(year, month)) };
+}
+
+function parsePeriodFromInput(input) {
+  const match = String(input || "").match(/(?:^|\n)\s*(?:(20\d{2})\s*年\s*)?([1-9]|1[0-2])\s*月份?\s*(?:\n|$)/);
+  if (!match) return null;
+  return { year: match[1] ? Number(match[1]) : null, month: Number(match[2]) };
 }
 
 function parseInterruptions(text) {
