@@ -1,4 +1,4 @@
-const CACHE_NAME = "wage-slip-pwa-v7";
+const CACHE_NAME = "wage-slip-pwa-v8";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,7 +9,7 @@ const ASSETS = [
   "./config.js",
   "./manifest.webmanifest",
   "./icon.svg",
-  "./templates/工人资料模板.xlsx"
+  "./templates/工人资料_2026-07-23版.xlsx"
 ];
 
 self.addEventListener("install", (event) => {
