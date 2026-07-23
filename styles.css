@@ -125,6 +125,20 @@ button:disabled {
   box-shadow: 0 5px 14px rgba(15, 118, 110, 0.12);
 }
 
+.default-version-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: -4px 0 12px;
+}
+
+.default-version-row button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
 .version-shell {
   opacity: 0;
   transform: translateY(6px);
@@ -139,7 +153,7 @@ button:disabled {
 .embedded-app {
   display: block;
   width: 100%;
-  min-height: calc(100vh - 132px);
+  min-height: calc(100vh - 118px);
   border: 0;
 }
 
@@ -324,6 +338,26 @@ textarea:focus {
 .wide {
   grid-column: 1 / -1;
   margin-top: 12px;
+}
+
+.upload-zone {
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  min-height: 118px;
+  padding: 16px;
+  border: 1.5px dashed #8db9b3;
+  border-radius: 8px;
+  background: #f6fbfa;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.upload-zone.dragging {
+  border-color: var(--brand);
+  background: var(--soft);
+  transform: translateY(-1px);
 }
 
 .check-row {
