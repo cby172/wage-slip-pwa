@@ -150,9 +150,17 @@ button:disabled {
   transform: translateY(0);
 }
 
+.version-shell,
+.workspace,
+.panel,
+.embedded .app {
+  min-width: 0;
+}
+
 .embedded-app {
   display: block;
   width: 100%;
+  max-width: 100%;
   min-height: calc(100vh - 118px);
   border: 0;
 }
@@ -456,16 +464,31 @@ textarea:focus {
 }
 
 .worker-stats {
-  display: grid;
-  gap: 10px;
+  display: block;
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 4px;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
   scrollbar-color: #8db9b3 #edf4f2;
 }
 
+.worker-stats::after {
+  content: "左右滑动查看更多";
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .stats-meta {
+  width: max-content;
+  min-width: min(100%, 980px);
+  margin-bottom: 10px;
   border: 1px solid #cdded9;
   border-radius: 8px;
   background: linear-gradient(135deg, #f6fbfa, #fff8eb);
@@ -478,6 +501,7 @@ textarea:focus {
 .worker-stat-table {
   display: grid;
   gap: 8px;
+  width: max-content;
   min-width: 980px;
 }
 
