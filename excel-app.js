@@ -407,25 +407,28 @@ function renderWorkerStats() {
 function buildWorkerStatsHtml(workerList) {
   if (!workerList.length) return '<p class="meta">还没有工人资料。</p>';
   const asOf = new Date();
-  const rows = workerList.map((worker) => {
+  const sortedWorkers = [...workerList]
+    .map((worker) => ({ worker, workYears: effectiveWorkYears(worker, asOf) }))
+    .sort((a, b) => b.workYears - a.workYears || String(a.worker.name).localeCompare(String(b.worker.name), "zh-CN"));
+  const rows = sortedWorkers.map(({ worker, workYears }) => {
     const salary = calculateWorkerSalary(worker, asOf);
-    const workYears = effectiveWorkYears(worker, asOf);
     const idle = formatIdleTime(worker, asOf);
     return `<article class="worker-stat-row">
       <div class="stat-cell stat-name" data-label="姓名">${escapeHtml(worker.name)}</div>
       <div class="stat-cell stat-age" data-label="工龄"><strong>${formatYears(workYears)}</strong><span>年</span></div>
       <div class="stat-cell" data-label="当前底薪">${money(salary.baseSalary)} 元</div>
-      <div class="stat-cell" data-label="津贴/合计">${money(salary.allowance)} / ${money(salary.baseSalary + salary.allowance)} 元</div>
+      <div class="stat-cell" data-label="津贴">${money(salary.allowance)} 元</div>
+      <div class="stat-cell" data-label="工资合计">${money(salary.baseSalary + salary.allowance)} 元</div>
       <div class="stat-cell" data-label="状态"><span class="mini-pill ${worker.active ? "ok" : "gray"}">${worker.active ? "在职" : "停用"}</span></div>
       <div class="stat-cell" data-label="仓管"><span class="mini-pill ${worker.is_warehouse_manager ? "accent" : "gray"}">${worker.is_warehouse_manager ? "是" : "否"}</span></div>
       <div class="stat-cell stat-idle" data-label="闲置时间">${escapeHtml(idle)}</div>
       <div class="stat-cell stat-formula" data-label="底薪计算公式">${escapeHtml(formatSalaryFormula(worker, salary, asOf))}</div>
     </article>`;
   }).join("");
-  return `<div class="stats-meta">统计日期：${dateKey(asOf)}；工龄已扣除中断/闲置时间，保留 1 位小数。</div>
+  return `<div class="stats-meta">统计日期：${dateKey(asOf)}；工龄已扣除中断/闲置时间，保留 2 位小数，可左右滑动查看完整表格。</div>
     <div class="worker-stat-table" role="table" aria-label="工人统计">
       <div class="worker-stat-head" role="row">
-        <span>姓名</span><span>工龄</span><span>当前底薪</span><span>津贴/合计</span><span>状态</span><span>仓管</span><span>闲置时间</span><span>底薪计算公式</span>
+        <span>姓名</span><span>工龄</span><span>当前底薪</span><span>津贴</span><span>工资合计</span><span>状态</span><span>仓管</span><span>闲置时间</span><span>底薪计算公式</span>
       </div>
       ${rows}
     </div>`;
@@ -481,7 +484,7 @@ function formatSalaryFormula(worker, salary, asOf) {
 }
 
 function formatYears(value) {
-  return (Math.round(Number(value || 0) * 10) / 10).toFixed(1);
+  return (Math.round(Number(value || 0) * 100) / 100).toFixed(2);
 }
 
 function renderDataHealth() {
