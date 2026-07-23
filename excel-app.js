@@ -119,6 +119,7 @@ function boot() {
   $("clearExcelBtn").addEventListener("click", clearSavedExcel);
   $("downloadCurrentBtn").addEventListener("click", downloadCurrentExcel);
   $("slipList").addEventListener("click", copySingleSlip);
+  $("resultSummary").addEventListener("click", copyPayrollSummary);
   initDropUpload();
   bindAttendanceHintBehavior();
   loadSavedExcel();
@@ -897,9 +898,20 @@ function renderPayrollSummary(result) {
   if (!target) return;
   const text = result.rows.map((row) => row.slipText).join("\n\n");
   target.innerHTML = `<section class="result-summary-card">
-    <h3>工资汇总</h3>
+    <div class="result-summary-head">
+      <h3>工资汇总</h3>
+      <button type="button" data-copy-summary>复制汇总</button>
+    </div>
     <pre class="result-summary-text">${escapeHtml(text)}</pre>
   </section>`;
+  target.dataset.summaryText = text;
+}
+
+async function copyPayrollSummary(event) {
+  if (!event.target.closest("[data-copy-summary]")) return;
+  const summary = $("resultSummary");
+  if (!summary?.dataset?.summaryText) return;
+  await copyText(summary.dataset.summaryText);
 }
 
 async function copySingleSlip(event) {
