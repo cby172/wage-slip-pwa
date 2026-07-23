@@ -143,6 +143,7 @@ function bindEvents() {
   $("generateBtn").addEventListener("click", generatePayroll);
   $("sampleAttendanceBtn").addEventListener("click", fillSampleAttendance);
   $("slipList").addEventListener("click", copySingleSlip);
+  $("resultSummary").addEventListener("click", copyPayrollSummary);
   $("workerForm").addEventListener("submit", saveWorker);
   $("resetWorkerBtn").addEventListener("click", resetWorkerForm);
   $("workerList").addEventListener("click", handleWorkerAction);
@@ -885,10 +886,21 @@ function renderPayrollSummary(result) {
   const text = result.rows.map((row) => row.slipText).join("\n\n");
   target.innerHTML = `
     <section class="result-summary-card">
-      <h3>工资汇总</h3>
+      <div class="result-summary-head">
+        <h3>工资汇总</h3>
+        <button type="button" data-copy-summary>复制汇总</button>
+      </div>
       <pre class="result-summary-text">${escapeHtml(text)}</pre>
     </section>
   `;
+  target.dataset.summaryText = text;
+}
+
+async function copyPayrollSummary(event) {
+  if (!event.target.closest("[data-copy-summary]")) return;
+  const summary = $("resultSummary");
+  if (!summary?.dataset?.summaryText) return;
+  await copyText(summary.dataset.summaryText);
 }
 
 async function copyAllSlips() {
