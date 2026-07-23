@@ -284,8 +284,8 @@ textarea {
 }
 
 textarea::placeholder {
-  color: #a7b8b3;
-  opacity: 0.8;
+  color: rgba(0, 0, 0, 0.32);
+  opacity: 1;
 }
 
 input:focus,
@@ -652,33 +652,14 @@ textarea:focus {
   font-size: 16px;
 }
 
-.result-summary-list {
-  display: grid;
-  gap: 8px;
-}
-
-.result-summary-item {
-  border: 1px solid #d7e5e1;
-  border-radius: 8px;
-  background: #fff;
-  padding: 10px 12px;
-}
-
-.result-summary-item strong {
-  display: block;
-  margin-bottom: 6px;
-}
-
-.result-summary-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 10px;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.result-summary-meta span {
-  white-space: nowrap;
+.result-summary-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.65;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
 }
 
 .badge {
